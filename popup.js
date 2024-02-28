@@ -107,27 +107,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const includeRegex = /include:([^ ]+)/g;
         const redirectRegex = /redirect=([^ ]+)/g;
         const spfDomains = [];
-
+    
         let match;
         while ((match = includeRegex.exec(DNSRecord)) !== null) {
-            spfDomains.push(getRootDomain(match[1])); // Push the matched domain into the array
+            spfDomains.push(getRootDomain(match[1]));
         }
-
+    
         while ((match = redirectRegex.exec(DNSRecord)) !== null) {
-            spfDomains.push(getRootDomain(match[1])); // Push the matched domain into the array
+            spfDomains.push(getRootDomain(match[1]));
         }
-
+    
         const uniqueSPFDomains = Array.from(new Set(spfDomains)); // Get unique SPF domains
         const availabilityResults = await Promise.all(uniqueSPFDomains.map(fetchDomainInfo)); // Fetch availability for each domain
-
+    
         const availableDomains = [];
         availabilityResults.forEach((availability, index) => {
             if (availability) {
                 availableDomains.push(uniqueSPFDomains[index]); // Push available domain into the array
             }
         });
-
-        return [availableDomains, uniqueSPFDomains]; // Return array of available domains
+    
+        // Encode HTML entities for availableDomains and uniqueSPFDomains
+        const encodedAvailableDomains = availableDomains.map(encodeHtmlEntities);
+        const encodedUniqueSPFDomains = uniqueSPFDomains.map(encodeHtmlEntities);
+    
+        return [encodedAvailableDomains, encodedUniqueSPFDomains]; // Return array of available domains
     }
     
 
@@ -172,19 +176,24 @@ document.addEventListener('DOMContentLoaded', function() {
         addItemToDNSRecordList(highlightedRecord, DNSRecordList);
     }
     
+    // Replaces (<, >, &, ', ", and characters in the range \u00A0 to \u9999) with their respective HTML entity representations
+    function encodeHtmlEntities(str) {
+        return str.replace(/[\u00A0-\u9999<>&'"]/gim, function(i) {
+            return '&#' + i.charCodeAt(0) + ';';
+        });
+    }    
 
     function addItemToDNSRecordList(text, DNSRecordList) {
         const DNSRecord = document.createElement('li');
         DNSRecord.style.fontWeight = 'bold';
-        DNSRecord.innerHTML = text;
+        DNSRecord.innerHTML = text; // Dynamic Values are HTML Entities Encoded
         DNSRecordList.appendChild(DNSRecord);
     }
-
 
     function createHeader(PopUpDiv, domainName, headerText, link){
         const domainLink = document.createElement('a');
         domainLink.href = link;
-        domainLink.innerHTML = `<h2>${domainName} ${headerText}:</h2>`;
+        domainLink.innerHTML = `<h2>${domainName} ${headerText}:</h2>`; // Dynamic Values are HTML Entities Encoded
         domainLink.style.textDecoration = 'none'
         domainLink.style.fontWeight = 'bold';
         PopUpDiv.appendChild(domainLink);
@@ -233,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     JSONData.Answer.forEach(async (record) => {
-                        let eachRecord = record.data.replace(/^\"|\"$/g, ''); // Remove leading and trailing quotes
+                        let eachRecord = encodeHtmlEntities(record.data.replace(/^\"|\"$/g, '')); // Remove leading and trailing quotes
                         if (headerText === "SPF") {
                             if (eachRecord.includes("v=spf1") && !eachRecord.startsWith("v=spf1")) {
                                 SPFExists = true;
@@ -350,8 +359,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     getCurrentTabUrl(function(url) {
-        const domainName = (new URL(url)).hostname;
-        const rootDomain = getRootDomain((new URL(url)).hostname);
+        const domainName = encodeHtmlEntities((new URL(url)).hostname);
+        const rootDomain = encodeHtmlEntities(getRootDomain((new URL(url)).hostname));
 
         var hunterLink = document.getElementById("hunterlink");
         hunterLink.href = `https://hunter.io/try/search/${rootDomain}?locale=en`; 
