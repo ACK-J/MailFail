@@ -133,29 +133,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function highlightSubstrings(DNSRecordList, redArray, blueArray, greenArray, eachRecord) {
         let highlightedRecord = eachRecord;
-
-        const replaceWithColor = (substring, color) => `<span style="color: ${color};">${substring}</span>`;
-
+    
+        const replaceWithColor = (substring, color) => {
+            // Check if the substring starts and ends with a space
+            const startsWithSpace = /^\s/.test(substring);
+            const endsWithSpace = /\s$/.test(substring);
+        
+            // Add spaces around the substring if necessary
+            if (startsWithSpace && endsWithSpace) {
+                return ` <span style="color: ${color};">${substring}</span> `;
+            } else {
+                return `<span style="color: ${color};">${substring}</span>`;
+            }
+        };
+        
+    
+        // Function to escape regular expression special characters
+        const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
         redArray.forEach(substring => {
             if (substring) {
                 highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, 'red'));
             }
         });
-
+    
         blueArray.forEach(substring => {
             if (substring) {
                 highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, 'blue'));
             }
         });
-
+    
         greenArray.forEach(substring => {
             if (substring) {
                 highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, 'green'));
             }
         });
-
+    
         addItemToDNSRecordList(highlightedRecord, DNSRecordList);
     }
+    
 
     function addItemToDNSRecordList(text, DNSRecordList) {
         const DNSRecord = document.createElement('li');
@@ -165,9 +181,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
-    function createHeader(PopUpDiv, domainName, headerText){
+    function createHeader(PopUpDiv, domainName, headerText, link){
         const domainLink = document.createElement('a');
-        domainLink.href = `https://mxtoolbox.com/emailhealth/${domainName}/`;
+        domainLink.href = link;
         domainLink.innerHTML = `<h2>${domainName} ${headerText}:</h2>`;
         domainLink.style.textDecoration = 'none'
         domainLink.style.fontWeight = 'bold';
@@ -197,7 +213,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const END = `</span>`;
                 const container = document.querySelector('.container');
                 const PopUpDiv = document.createElement('div');
-                createHeader(PopUpDiv, domainName, headerText);
+                if (headerText === "SPF") {
+                    createHeader(PopUpDiv, domainName, headerText, `https://dmarcian.com/spf-survey/?domain=${domainName}`);
+                } else if (headerText === "DMARC") {
+                    createHeader(PopUpDiv, domainName, headerText, `https://dmarcian.com/dmarc-inspector/?domain=${domainName}`);
+                } else if (headerText === "MX") {
+                    createHeader(PopUpDiv, domainName, headerText, `https://mxtoolbox.com/SuperTool.aspx?action=mx%3a${domainName}&run=toolpage`);
+                }
+                
                 const DNSRecordList = document.createElement('ul');
 
                 // If the DNS record has no results
@@ -215,17 +238,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (eachRecord.includes("v=spf1") && !eachRecord.startsWith("v=spf1")) {
                                 SPFExists = true;
                                 incrementBadgeForCurrentTab();
-                                addItemToDNSRecordList(`${RED}The SPF record did not start with 'v=spf1'. Email spoofing is possible.${END}`, DNSRecordList);
+                                addItemToDNSRecordList(`${RED}The SPF record did not start with 'v=spf1'. The Record is Invalid and Email Spoofing is Possible.${END}`, DNSRecordList);
                             } else if (eachRecord.includes("v=spf1")) {
                                 SPFExists = true;
                                 let red = ["+all", "?all"];
-                                let blue = ["redirect=", "exp=", "exists:", " mx ", " a ", " ptr ", " +mx ", " +a "];
+                                let blue = ["redirect=", "exp=", "exists:", " a ", " mx ", " ptr ", " +mx ", " +a ", "+ptr"];
                                 let green = ["-all", "~all"];
                                 highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
 
                                 if (!eachRecord.includes("~all") && !eachRecord.includes("-all")) {
                                     incrementBadgeForCurrentTab();
-                                    addItemToDNSRecordList(`${RED}Neither ~all or -all was found. Email spoofing is possible.${END}`, DNSRecordList);
+                                    addItemToDNSRecordList(`${RED}Neither ~all or -all was Found. Email spoofing is possible.${END}`, DNSRecordList);
                                 }
                                 await checkSPFDomainAvailable(eachRecord)
                                     .then(([availableDomains, spfDomains]) => {
@@ -241,9 +264,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         if (headerText === "DMARC" && eachRecord.includes("v=DMARC1")) {
                             DMARCExists = true;
-                            let red = ["sp=none", "p=none", "fo=0"];
+                            let red = ["sp=none", "p=none", "fo=0", "fo=d"];
                             let blue = ["aspf=r", "adkim=r"];
-                            let green = ["sp=reject", "sp=quarantine", "p=reject", "p=quarantine", "rua=", "ruf=", "adkim=s", "aspf=s", "pct=100"];
+                            let green = ["sp=reject", "sp=quarantine", "p=reject", "p=quarantine", "rua=", "ruf=", "adkim=s", "aspf=s", "pct=100", "fo=1"];
                             
                             if (!eachRecord.startsWith("v=DMARC1")) {
                                 red.push("v=DMARC1");
@@ -258,7 +281,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 addItemToDNSRecordList(`${RED}Neither p=quarantine or p=reject was found. Email spoofing is possible.${END}`, DNSRecordList);
                             } if (!eachRecord.includes("p=")) {
                                 incrementBadgeForCurrentTab();
-                                addItemToDNSRecordList(`${RED}A Domain Policy p= is Missing. Email spoofing is possible.${END}`, DNSRecordList);
+                                addItemToDNSRecordList(`${RED}A Domain Policy (p=) is Missing. Email Spoofing is Possible.${END}`, DNSRecordList);
+                            } if (eachRecord.includes("fo=1") && !eachRecord.includes("ruf=")) {
+                                incrementBadgeForCurrentTab();
+                                addItemToDNSRecordList(`${RED}Forensic Reporting Enabled Without a Delivery Address (ruf="). No DMARC Reports are Sent.${END}`, DNSRecordList);
+                            } if (!eachRecord.includes("fo=0") && eachRecord.includes("ruf=")) {
+                                incrementBadgeForCurrentTab();
+                                addItemToDNSRecordList(`${RED}Forensic Address Specified (ruf=) Without Forensic Reports Enabled (fo=1). DMARC Reports are Sent only if all Underlying Authentication Mechanisms Fail.${END}`, DNSRecordList);
                             }
                         }
                         if (headerText === "MX") {
@@ -326,8 +355,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var hunterLink = document.getElementById("hunterlink");
         hunterLink.href = `https://hunter.io/try/search/${rootDomain}?locale=en`; 
-        var hunterLink = document.getElementById("dnsquerieslink");
-        hunterLink.href = `https://www.dnsqueries.com/en/smtp_test_check.php`; 
+        var dnsquerieslinkLink = document.getElementById("dnsquerieslink");
+        dnsquerieslinkLink.href = `https://www.dnsqueries.com/en/smtp_test_check.php`; 
+        var MXLink = document.getElementById("mxlink");
+        MXLink.href = `https://mxtoolbox.com/emailhealth/${rootDomain}/`; 
        
         fetchMailCheckResults(domainName, rootDomain);
     });
