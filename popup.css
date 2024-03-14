@@ -30,6 +30,12 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Slight box shadow for depth */
 }
 
+.centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 #mxlink {
     display: flex;
     align-items: center;
