@@ -48,8 +48,14 @@
 
 
 
-// new DMARC bug https://www.mail.com/
+// TEST CASES
+// Is multiple SPFs okay? https://www.joinautopilot.com/
+// https://www.bluestate.co/ pct= 
+// _spf test case https://www.google.com/
 
+//TODO
+// Add check for .co.uk
+// new DMARC bug https://www.mail.com/
 // Look into DANE
 // Look into DNSBL (DNS-Based Blackhole List):
 
@@ -297,12 +303,13 @@ document.addEventListener('DOMContentLoaded', function () {
                                     }
                                 }
                                 let red = ["+all", "?all", "v=spf2.0"];
-                                let blue = ["redirect=", "exp=", "exists:", " a ", " mx ", " ptr ", " +mx ", " +a ", "+ptr", "/6", "/7", "/8", "/9", "/10", "/11", "/12", "/13", "/14", "/15", "/16", "/17", "/18", "/19", "/20", "/21", "/22","/23", "/24", "%{i}", "%{h}", "%{d}"];
+                                let blue = ["redirect=", "exp=", "exists:", " a ", " mx ", " ptr ", " +mx ", " +a ", "+ptr", "/64", "/6", "/7", "/8", "/9", "/10", "/11", "/12", "/13", "/14", "/15", "/16", "/17", "/18", "/19", "/20", "/21", "/22","/23", "/24", "%{i}", "%{h}", "%{d}"];
                                 let green = ["-all", "~all"];
                                 highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
-                                CIDR_Ranges = ["/6", "/7", "/8", "/9", "/10", "/11", "/12", "/13", "/14", "/15", "/16", "/17", "/18", "/19", "/20", "/21", "/22","/23", "/24"];
+                                CIDR_Ranges = ["/64", "/6", "/7", "/8", "/9", "/10", "/11", "/12", "/13", "/14", "/15", "/16", "/17", "/18", "/19", "/20", "/21", "/22","/23", "/24"];
                                 if (CIDR_Ranges.some(substring => eachRecord.includes(substring))) {
-                                    addItemToDNSRecordList(`${BLUE}Check if Any IP Within the CIDR Ranges Specified are Open Redirects.${END}`, DNSRecordList);
+                                    const smtp_relay = `<a href="https://mailtrap.io/blog/smtp-relay/"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
+                                    addItemToDNSRecordList(`${smtp_relay} ${BLUE}Check if Any IPs Within the CIDR Ranges are Open Relays.${END}</br>nmap -p25 --script smtp-open-relay 10.10.10.10 -v`, DNSRecordList);
                                 }
                                 if (!eachRecord.includes("~all") && !eachRecord.includes("-all")) {
                                     incrementBadgeForCurrentTab();
@@ -486,7 +493,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // if the subdomain is not spoofable and the subdomain record doesnt exist
                 if (isSubDomain && !DMARCSubDomainSpoofable && DMARCCount === 0 && headerText === "DMARC") {
-                    addItemToDNSRecordList(`No Subdomain DMARC Record Found. The Root Domain DMARC Policy is Applied.`, DNSRecordList);
+                    const rfc7489_6_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.3"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
+                    addItemToDNSRecordList(`${rfc7489_6_3} No Subdomain DMARC Record Found. The Root Domain DMARC Policy is Applied.`, DNSRecordList);
                 } else if (DMARCCount === 0 && headerText === "DMARC" && isSubDomain) {
                     incrementBadgeForCurrentTab();
                     addItemToDNSRecordList(`${RED}No DMARC Record Found or the Root Domain was Misconfigured. Email Spoofing is Possible.${END}`, DNSRecordList);
