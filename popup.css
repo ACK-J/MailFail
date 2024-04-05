@@ -3,11 +3,12 @@ body {
     margin: 0;
     padding: 0;
     background-color: #f0f0f0;
+    width: 365px;
 }
 
 .container {
     position: relative;
-    width: 300px;
+    width: 320px;
     margin: 10px auto;
     padding: 15px;
     background-color: #fff;
@@ -39,6 +40,16 @@ body {
 #mxlink {
     display: flex;
     align-items: center;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Prevent visited links from being highlighted */
+a:visited {
+    color: inherit; /* Use the same color as normal links */
 }
 
 h1 {

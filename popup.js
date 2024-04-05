@@ -29,7 +29,7 @@
 // - if the DMARC record is missing p= add a list item that states spoofing is possible. sp is for subdomains and p is the policy for the root domain
 
 // For MX
-// - if the record includes "mail.protection.outlook.com" then add a new list item that states `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From informationsecurity@${domainName} -Subject “Test” -Body “Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High`
+// - if the record includes "mail.protection.outlook.com" then add a new list for direct send item that states `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From informationsecurity@${domainName} -Subject “Test” -Body “Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High`
 
 // For BIMI
 // - retrieves the SVG
@@ -49,15 +49,32 @@
 
 
 // TEST CASES
+// DKIM 512 https://53.com
+// Missing SPF catch all https://eircom.net
 // Is multiple SPFs okay? https://www.joinautopilot.com/
 // https://www.bluestate.co/ pct= 
 // _spf test case https://www.google.com/
+// https://www.mail.com/
+// MTA-STS testing mode https://mxtoolbox.com/
 
 //TODO
 // Add check for .co.uk
-// new DMARC bug https://www.mail.com/
 // Look into DANE
 // Look into DNSBL (DNS-Based Blackhole List):
+// Read RFCs
+// Set up VM with every mailbox
+// Add a loading bar
+// Multiple strings in SPF record https://datatracker.ietf.org/doc/html/rfc7208#section-3.3
+// SPF record size too big https://datatracker.ietf.org/doc/html/rfc7208#section-3.4 
+// SPF doesnt work (MAIL FROM:) https://datatracker.ietf.org/doc/html/rfc7208#section-11.2
+
+
+// Presentation
+// register m.ail.fail
+// SpamHaus
+// Unknown sender Outlook bypass
+// Different email clients
+// demo on two ways to send email via powershell
 
 
 
@@ -251,8 +268,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function createHeader(PopUpDiv, domainName, headerText, link) {
         const domainLink = document.createElement('a');
         domainLink.href = link;
-        domainLink.innerHTML = `<h2>${domainName} ${headerText}:</h2>`; // Dynamic Values are HTML Entities Encoded
-        domainLink.style.textDecoration = 'none'
+        domainLink.innerHTML = `<h2><img src="icons/link.webp" style=width:30px;height:18px;>${domainName} ${headerText}:</h2>`; // Dynamic Values are HTML Entities Encoded
+        domainLink.style.textDecoration = 'none';
         domainLink.style.fontWeight = 'bold';
         PopUpDiv.appendChild(domainLink);
     }
@@ -260,6 +277,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function checkRecord(apiUrl, domainName, headerText) {
         let SPFExists = false;
         let DMARCCount = 0;
+        let SPFCount = 0;
         const isSubDomain = domainName.split(".").length > 2; // If there's more than one period, there will be at least 2 elements in the array
         fetch(apiUrl, {
             headers: {
@@ -281,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // If the DNS record has no results
                 if (!JSONData.Answer || JSONData.Answer.length === 0) {
                     if (headerText === "MX") {
-                        addItemToDNSRecordList(`No ${headerText} Record Found. This Domain can't Recieve Emails.`, DNSRecordList);
+                        addItemToDNSRecordList(`No ${headerText} Record Found. This Domain can't Receive Emails.`, DNSRecordList);
                     }
                 } else {
                     JSONData.Answer.forEach(async (record) => {
@@ -293,6 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 addItemToDNSRecordList(`${RED}The SPF record did not start with 'v=spf1'. The Record is Invalid and Email Spoofing is Possible.${END}`, DNSRecordList);
                             } else if (eachRecord.includes("v=spf1")) {
                                 SPFExists = true;
+                                SPFCount += 1;
                                 if (!isSubDomain) {
                                     if (eachRecord.includes("+all")) {
                                         SPFSubDomainSpoofable = true;
@@ -303,22 +322,27 @@ document.addEventListener('DOMContentLoaded', function () {
                                     }
                                 }
                                 let red = ["+all", "?all", "v=spf2.0"];
-                                let blue = ["redirect=", "exp=", "exists:", " a ", " mx ", " ptr ", " +mx ", " +a ", "+ptr", "/64", "/6", "/7", "/8", "/9", "/10", "/11", "/12", "/13", "/14", "/15", "/16", "/17", "/18", "/19", "/20", "/21", "/22","/23", "/24", "%{i}", "%{h}", "%{d}"];
+                                let blue = ["redirect=", "exp=", "exists:", " a ", " mx ", " ptr ", " +mx ", " +a ", "+ptr", "%{i}", "%{h}", "%{d}"];
+                                let CIDR_Ranges = Array.from({ length: 128 }, (_, i) => `/${127 - i}`); // generate all CIDR notations for IPv4 and IPv6
+                                let combined_blue = blue.concat(CIDR_Ranges);
                                 let green = ["-all", "~all"];
-                                highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
-                                CIDR_Ranges = ["/64", "/6", "/7", "/8", "/9", "/10", "/11", "/12", "/13", "/14", "/15", "/16", "/17", "/18", "/19", "/20", "/21", "/22","/23", "/24"];
+
+                                highlightSubstrings(DNSRecordList, red, combined_blue, green, eachRecord);
+                                
                                 if (CIDR_Ranges.some(substring => eachRecord.includes(substring))) {
-                                    const smtp_relay = `<a href="https://mailtrap.io/blog/smtp-relay/"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                                    addItemToDNSRecordList(`${smtp_relay} ${BLUE}Check if Any IPs Within the CIDR Ranges are Open Relays.${END}</br>nmap -p25 --script smtp-open-relay 10.10.10.10 -v`, DNSRecordList);
+                                    const smtp_relay = `<a href="https://mailtrap.io/blog/smtp-relay/"><img src=icons/info.jpg style=width:20px;height:20px;> ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</br>nmap -p25 --script smtp-open-relay 10.10.10.10/24 -v</a>`
+                                    addItemToDNSRecordList(`${smtp_relay}`, DNSRecordList);
                                 }
                                 if (!eachRecord.includes("~all") && !eachRecord.includes("-all")) {
                                     incrementBadgeForCurrentTab();
-                                    addItemToDNSRecordList(`${RED}Neither ~all or -all were Found. Email Spoofing is Possible.${END}`, DNSRecordList);
+                                    const rfc7208_2_6 = `<a href="https://datatracker.ietf.org/doc/html/rfc7208#section-2.6"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Neither ~all or -all were Found. Email Spoofing is Possible.${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7208_2_6}`, DNSRecordList);
                                 }
                                 await checkSPFDomainAvailable(eachRecord)
                                     .then(([availableDomains, spfDomains]) => {
                                         if (availableDomains.length > 0) {
-                                            addItemToDNSRecordList(`One or More of the SPF Domain(s) are Available to Purchase! ${RED}[ ${availableDomains.join(", ")} ]${END}`, DNSRecordList);
+                                            const purchase_domain_link = `<a href="https://www.namecheap.com/domains/registration/results/?domain=${availableDomains[0]}"><img src=icons/info.jpg style=width:20px;height:20px;> The Following Domain(s) are Available to Purchase and Used by the SPF Record! ${RED}[ ${availableDomains.join(", ")} ]${END}</a>`;
+                                            addItemToDNSRecordList(`${purchase_domain_link}`, DNSRecordList);
                                             incrementBadgeForCurrentTab();
                                             notify("Serious SPF Misconfiguration Found", "The SPF record included reference to an authoritative domain that you can purchase and spoof valid emails from");
                                         } else {
@@ -330,8 +354,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (headerText == "_SPF") {
                             if (eachRecord.includes("v=spf1")) {
                                 addItemToDNSRecordList(`${BLUE}${eachRecord}${END}`, DNSRecordList);
-                                const rfc7208_3_1 = `<a href="https://datatracker.ietf.org/doc/html/rfc7208#section-3.1"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                                addItemToDNSRecordList(`${rfc7208_3_1} The _spf.${domainName} TXT Record Has Been Deprecated Since 2014. However, It May Be Used by the "include" or "redirect" Mechanism.`, DNSRecordList);
+                                const mx_toolbox_spf_deprecated = `<a href="https://mxtoolbox.com/problem/spf/spf-record-deprecated"><img src=icons/info.jpg style=width:20px;height:20px;> The _spf.${domainName} TXT Record Has Been Deprecated Since 2014. However, It May Be Used by the "include" or "redirect" Mechanism.</a>`;
+                                addItemToDNSRecordList(`${mx_toolbox_spf_deprecated}`, DNSRecordList);
                             }
                         }
                         if (headerText === "DMARC" && eachRecord.includes("v=DMARC1")) {
@@ -345,41 +369,45 @@ document.addEventListener('DOMContentLoaded', function () {
                                 red.push("v=DMARC1");
                                 incrementBadgeForCurrentTab();
                             } if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100")) {
-                                red.push("pct=");
+                                for (var i = 99; i >= 0; i--) red.push("pct=" + i);
                                 incrementBadgeForCurrentTab();
                             }
                             highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
                             if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100")) {
-                                addItemToDNSRecordList(`${RED}The pct= Tag was not Set to 100. Email Spoofing is Possible.${END}`, DNSRecordList);
+                                const rfc7489_6_3_p18 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-18"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}The pct= Tag was Set Lower Than 100. Email Spoofing is Possible.${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             }
                             // Check if p=quarantine or reject is present for the main policy. This gets tricky with sp=
                             const policy_regex_q = /[" ;](p=quarantine)/;
                             const policy_regex_r = /[" ;](p=reject)/;
                             if (!policy_regex_q.test(eachRecord) && !policy_regex_r.test(eachRecord)) {
                                 incrementBadgeForCurrentTab();
-                                addItemToDNSRecordList(`${RED}Neither p=quarantine or p=reject were found. Email Spoofing is Possible.${END}`, DNSRecordList);
+                                const rfc7489_6_3_p18 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-18"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Neither p=quarantine or p=reject were found. Email Spoofing is Possible.${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             }
                             const policy_regex = /[" ;](p=)/;
                             if (!policy_regex.test(eachRecord)) {
                                 incrementBadgeForCurrentTab();
-                                addItemToDNSRecordList(`${RED}A Domain Policy (p=) is Missing. Email Spoofing is Possible.${END}`, DNSRecordList);
+                                const rfc7489_6_3_p18 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-18"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}A Domain Policy (p=) is Required but Missing. Email Spoofing is Possible.${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             } if (eachRecord.includes("sp=none")) {
                                 incrementBadgeForCurrentTab();
-                                addItemToDNSRecordList(`${RED}The Subdomain Policy (sp=none) is Too Permissive. Email Spoofing with a Subdomain is Possible.${END}`, DNSRecordList);
+                                const rfc7489_6_3_p20 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-20"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}The Subdomain Policy (sp=none) is Too Permissive. Email Spoofing from a Subdomain is Possible.${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_3_p20}`, DNSRecordList);
                             } if (eachRecord.includes("fo=1") && !eachRecord.includes("ruf=")) {
-                                const rfc7489_6_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.3"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                                addItemToDNSRecordList(`${rfc7489_6_3} Forensic Reporting Enabled (fo=1) Without a Delivery Address (ruf=). No Forensic DMARC Reports are Sent.`, DNSRecordList);
+                                const rfc7489_6_3_p18 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-18"><img src=icons/info.jpg style=width:20px;height:20px;> Forensic Reporting Enabled (fo=1) Without a Delivery Address (ruf=). No Forensic DMARC Reports are Sent.</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             } if (!eachRecord.includes("fo=1") && eachRecord.includes("ruf=")) {
-                                const rfc7489_6_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.3"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                                addItemToDNSRecordList(`${rfc7489_6_3} Forensic Address Specified (ruf=) Without Forensic Reports Enabled (fo=1). DMARC Reports are Sent only if All Underlying Authentication Mechanisms (SPF/DKIM) Fail.`, DNSRecordList);
+                                const rfc7489_6_3_p18 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-18"><img src=icons/info.jpg style=width:20px;height:20px;> Forensic Address Specified (ruf=) Without Forensic Reports Enabled (fo=1). Forensic DMARC Reports are Sent only if All Underlying Authentication Mechanisms (SPF/DKIM) Fail Alignment Checks.</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             } if (eachRecord.includes("rua=") && !eachRecord.includes("rua=mailto:")) {
                                 incrementBadgeForCurrentTab();
-                                const rfc7489_6_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.3"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                                addItemToDNSRecordList(`${rfc7489_6_3} ${RED}Malformed rua= Missing "mailto:". No Aggregate DMARC Reports are Sent.${END}`, DNSRecordList);
+                                const rfc7489_6_3_p19 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-19"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Malformed rua= Missing "mailto:". No Aggregate DMARC Reports are Sent.${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_3_p19}`, DNSRecordList);
                             } if (eachRecord.includes("ruf=") && !eachRecord.includes("ruf=mailto:")) {
                                 incrementBadgeForCurrentTab();
-                                const rfc7489_6_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.3"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                                addItemToDNSRecordList(`${rfc7489_6_3} ${RED}Malformed ruf= Missing "mailto:". No Forensic DMARC Reports are Sent.${END}`, DNSRecordList);
+                                const rfc7489_6_3_p20 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-20"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Malformed ruf= Missing "mailto:". No Forensic DMARC Reports are Sent.${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_3_p20}`, DNSRecordList);
                             } if (!isSubDomain) { // if root domain
                                 if (eachRecord.includes("sp=none")) {
                                     DMARCSubDomainSpoofable = true;
@@ -406,9 +434,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             } else if (eachRecord.includes("mail.protection.outlook.com") || eachRecord.includes("mail.protection.partner.outlook.cn")) {
                                 let SMTPServer = eachRecord.split(' ')[1];
                                 // Removes the warning banner added to suspicious emails in Outlook
-                                const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:none;}&lt;/style&gt;"
+                                const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:none;}&lt;/style&gt;";
                                 addItemToDNSRecordList(SMTPServer + `<img src="https://icons.duckduckgo.com/ip3/${getRootDomain(SMTPServer).replace(/\.$/, '')}.ico" style=width:22px;height:22px;max-width:100%;max-height:100%;float:right;>`, DNSRecordList);
-                                addItemToDNSRecordList(`${RED}Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From informationsecurity@${domainName} -Subject “Test” -Body “${hideWarningBanner}Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl${END}`, DNSRecordList);
+                                const spoofing_direct_send = `<a href="https://www.blackhillsinfosec.com/spoofing-microsoft-365-like-its-1995/"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From ceo@${domainName} -Subject “Test” -Body “${hideWarningBanner}Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl${END}</a>`;
+                                addItemToDNSRecordList(`${spoofing_direct_send}`, DNSRecordList);
                                 incrementBadgeForCurrentTab();
                             }
                         }
@@ -422,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 var match = pattern.exec(eachRecord);
                                 if (match && match.length > 1) {
                                     var url = match[1];
-                                    // Security Concern XSS
+                                    // Security Concern XSS in SVG
                                     BIMI_IMG = `<a href="${url}" class="centered"><img src=${url} style=width:50px;height:50px;max-width:100%;max-height:100%;></a>`;
                                     addItemToDNSRecordList(BIMI_IMG, DNSRecordList);
                                 }
@@ -438,18 +467,19 @@ document.addEventListener('DOMContentLoaded', function () {
                                             let blue = ["mx:"];
                                             let green = ["mode: enforce", "sts: true", "all: true", "include_subdomains: true"];
                                             highlightSubstrings(DNSRecordList, red, blue, green, mtastsText);
-                                        } else {
+                                        } else { // If CORS blocks the request
                                             addItemToDNSRecordList(`<a href="https://mta-sts.${domainName}/.well-known/mta-sts.txt" style="text-decoration: none; width: 200px;"><span style="color: blue;">Click Here to Download the MTA-STS Text File.</span></a>`, DNSRecordList);
                                         }
                                     });
 
                                 } else {
                                     addItemToDNSRecordList(eachRecord, DNSRecordList);
-                                    addItemToDNSRecordList(`${RED}Invalid MTA-STS Record. It Must Start with "v=STSv1".${END}`, DNSRecordList);
+                                    const rfc8461_3_1 = `<a href="https://datatracker.ietf.org/doc/html/rfc8461#section-3.1"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Invalid MTA-STS Record. It Must Start with "v=STSv1".${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc8461_3_1}`, DNSRecordList);
                                     MTASTS_File = fetchMtaSts(domainName).then(mtastsText => {
                                         if (mtastsText) {
                                             addItemToDNSRecordList(mtastsText, DNSRecordList);
-                                        } else {
+                                        } else { // If CORS blocks the request
                                             addItemToDNSRecordList(`<a href="https://mta-sts.${domainName}/.well-known/mta-sts.txt" style="text-decoration: none; width: 200px;"><span style="color: blue;">Click Here to Get the MTA-STS Text File.</span></a>`, DNSRecordList);
                                         }
                                     });
@@ -493,8 +523,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // if the subdomain is not spoofable and the subdomain record doesnt exist
                 if (isSubDomain && !DMARCSubDomainSpoofable && DMARCCount === 0 && headerText === "DMARC") {
-                    const rfc7489_6_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.3"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                    addItemToDNSRecordList(`${rfc7489_6_3} No Subdomain DMARC Record Found. The Root Domain DMARC Policy is Applied.`, DNSRecordList);
+                    const rfc7489_6_3_p18 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#page-18"><img src=icons/info.jpg style=width:20px;height:20px;> No Subdomain DMARC Record Found. The Root Domain DMARC Policy is Applied.</a>`;
+                    addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                 } else if (DMARCCount === 0 && headerText === "DMARC" && isSubDomain) {
                     incrementBadgeForCurrentTab();
                     addItemToDNSRecordList(`${RED}No DMARC Record Found or the Root Domain was Misconfigured. Email Spoofing is Possible.${END}`, DNSRecordList);
@@ -505,8 +535,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 // If there are more than one valid DMARC records then DMARC discovery will fail
                 if (DMARCCount > 1 && headerText === "DMARC") {
                     incrementBadgeForCurrentTab();
-                    const rfc7489_6_6_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.3"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                    addItemToDNSRecordList(`${rfc7489_6_6_3} ${RED}Multiple DMARC Records Found. Email Spoofing is Possible.${END}`, DNSRecordList);
+                    const rfc7489_6_6_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.3"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Multiple DMARC Records Found. Email Spoofing is Possible.${END}</a>`;
+                    addItemToDNSRecordList(`${rfc7489_6_6_3}`, DNSRecordList);
+                }
+                // If there are more than one valid SPF record discovery will fail
+                if (SPFCount > 1 && headerText === "SPF") {
+                    incrementBadgeForCurrentTab();
+                    const rfc7208_3_2 = `<a href="https://datatracker.ietf.org/doc/html/rfc7208#section-3.2"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Multiple SPF Records Found. Email Spoofing is Possible.${END}</a>`;
+                    addItemToDNSRecordList(`${rfc7208_3_2}`, DNSRecordList);
                 }
 
                 PopUpDiv.appendChild(DNSRecordList);
@@ -601,8 +637,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (rsaKeySize && rsaKeySize < 1024) {
                     incrementBadgeForCurrentTab();
                     addItemToDNSRecordList(`RSA-Key Size: ${RED}${rsaKeySize}${END}</br>` + `Selector: ${RED}${selector}${END}</br>${RED}${selector}._domainkey.${domainName}${END}</br></br>` + dkimRecord, DNSRecordList);
-                    const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                    addItemToDNSRecordList(`${Cado_NFS_Tut} ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered.${END}`, DNSRecordList);
+                    const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered.${END}</a>`
+                    addItemToDNSRecordList(`${Cado_NFS_Tut}`, DNSRecordList);
                     notify("Cryptographically Broken RSA Key", `The ${selector} DKIM selector on ${domainName} uses a ${rsaKeySize}-bit RSA key.`);
                 } else if (rsaKeySize && rsaKeySize >= 1024) {
                     addItemToDNSRecordList(`RSA-Key Size: ${GREEN}${rsaKeySize}${END}</br>` + `Selector: ${BLUE}${selector}${END}</br>${BLUE}${selector}._domainkey.${domainName}${END}</br></br>` + dkimRecord, DNSRecordList);
@@ -612,8 +648,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 if (rsaKeySize && !dkimRecord.startsWith("v=DKIM1")) {  //https://datatracker.ietf.org/doc/html/rfc6376/#section-3.6.1
                     incrementBadgeForCurrentTab();
-                    const rfc6376_3_6_1 = `<a href="https://datatracker.ietf.org/doc/html/rfc6376/#section-3.6.1"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                    addItemToDNSRecordList(`${rfc6376_3_6_1} ${RED}DKIM Record Does Not Conform to RFC-6376 Specifications. It Must Start With v=DKIM1. It Might be an ARC Key.${END}`, DNSRecordList);
+                    const rfc6376_3_6_1 = `<a href="https://datatracker.ietf.org/doc/html/rfc6376/#section-3.6.1"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}DKIM Record Does Not Conform to RFC-6376 Specifications. It Must Start With v=DKIM1. It Might be an ARC Key.${END}</a>`
+                    addItemToDNSRecordList(`${rfc6376_3_6_1}`, DNSRecordList);
                 }
             }
         });
@@ -646,8 +682,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (rsaKeySize && rsaKeySize < 1024) {
                     incrementBadgeForCurrentTab();
                     addItemToDNSRecordList(`RSA-Key Size: ${RED}${rsaKeySize}${END}</br>` + `Selector: ${RED}${selector}${END}</br>${RED}${selector}._domainkey.${domainName}${END}</br></br>` + ARCRecord, DNSRecordList);
-                    const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/"><img src=icons/info.jpg style=width:20px;height:20px;></a>`
-                    addItemToDNSRecordList(`${Cado_NFS_Tut} ${RED}Cryptographically Insecure Selector "${selector}" Detected. ARC Private Key Can be Recovered.${END}`, DNSRecordList);
+                    const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Cryptographically Insecure Selector "${selector}" Detected. ARC Private Key Can be Recovered.${END}</a>`
+                    addItemToDNSRecordList(`${Cado_NFS_Tut}`, DNSRecordList);
                     notify("Cryptographically Broken RSA Key", `The ${selector} ARC selector on ${domainName} uses a ${rsaKeySize}-bit RSA key.`);
                 } else if (rsaKeySize && rsaKeySize >= 1024) {
                     addItemToDNSRecordList(`RSA-Key Size: ${GREEN}${rsaKeySize}${END}</br>` + `Selector: ${BLUE}${selector}${END}</br>${BLUE}${selector}._domainkey.${domainName}${END}</br></br>` + ARCRecord, DNSRecordList);
