@@ -637,7 +637,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (rsaKeySize && rsaKeySize < 1024) {
                     incrementBadgeForCurrentTab();
                     addItemToDNSRecordList(`RSA-Key Size: ${RED}${rsaKeySize}${END}</br>` + `Selector: ${RED}${selector}${END}</br>${RED}${selector}._domainkey.${domainName}${END}</br></br>` + dkimRecord, DNSRecordList);
-                    const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered.${END}</a>`
+                    if (rsaKeySize === "512"){
+                        const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered in About 4 Days for $20.${END}</a>`;
+                    }else{
+                        const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/"><img src=icons/info.jpg style=width:20px;height:20px;> ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered.${END}</a>`;
+                    }
                     addItemToDNSRecordList(`${Cado_NFS_Tut}`, DNSRecordList);
                     notify("Cryptographically Broken RSA Key", `The ${selector} DKIM selector on ${domainName} uses a ${rsaKeySize}-bit RSA key.`);
                 } else if (rsaKeySize && rsaKeySize >= 1024) {
