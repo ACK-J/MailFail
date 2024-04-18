@@ -4,6 +4,7 @@ body {
     padding: 0;
     background-color: #f0f0f0;
     width: 400px;
+    line-height: 1.2;
 }
 
 .container {
@@ -60,6 +61,31 @@ progress {
     z-index: 1; /* Ensure the percentage text appears above the progress bar */
   }
 
+  .inline-command {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-family: Arial, sans-serif;
+    display: inline-block;
+    margin-right: 5px; /* Add some space between inline commands */
+  }
+  .command-container {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    margin-top: 6px; 
+    scrollbar-width: thin; 
+    position: relative;
+  }
+
+  .inline-command svg {
+    position: absolute;
+    left: 100px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+  }
 .centered {
     display: flex;
     justify-content: center;

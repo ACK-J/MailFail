@@ -60,6 +60,7 @@
 // Missing DMARC https://www.billyjoel.com/
 // SPF ?all thewindowsclub.com
 // SPF PTR record nmap.org
+// p= quarantine https://standardnotes.com/
 
 //TODO
 // Add check for .co.uk
@@ -81,8 +82,6 @@
 // DKIM doesnt work https://datatracker.ietf.org/doc/html/rfc6376#section-1.5
 // Add DNSSEC https://dnssec-debugger.verisignlabs.com/huque.com  https://dnsviz.net/d/huque.com/dnssec/
     // Can you crack a 512 bit DNSSEC key?
-// make sure BIMI is SVG extension
-// modify red and blues to have higher contrast
 // add DKIM and ARC switches
 
 // Presentation
@@ -141,10 +140,15 @@ ARCCustomSelectors = null;
 // Global variable to check if the root domain's dmarc policy is set to reject. This is important for subdomains
 let DMARCSubDomainSpoofable = true;
 let SPFSubDomainSpoofable = true;
-
-const RED = `<span style="color: red;">`;
-const BLUE = `<span style="color: blue;">`;
-const GREEN = `<span style="color: green;">`;
+const COPY_SVG = `<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class=""><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path></svg>`;
+const BLUE_HEX = "#0361ac";
+const RED_HEX = "#CC0000";
+const GREEN_HEX = "#228B22";
+const RED = `<span style="color: ${RED_HEX};">`;
+const BLUE = `<span style="color: ${BLUE_HEX};">`;
+const GREEN = `<span style="color: ${GREEN_HEX};">`;
+const COMMAND = `<div class="command-container"><span class="inline-command">`;
+const COMMAND_END = `</span></div>`;
 const END = `</span>`;
 const INFO_IMG = `<img src=icons/info.jpg style=width:20px;height:20px;>`;
 
@@ -178,7 +182,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function fetchDomainInfo(domainName) {
-        console.log(domainName);
         domainName = domainName.replace(/&#34;/g, ''); // Remove URL encoded Quotes
         const apiUrl = `https://rdap.net/domain/${domainName}`;
         try {
@@ -263,19 +266,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
         redArray.forEach(substring => {
             if (substring) {
-                highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, 'red'));
+                highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, `${RED_HEX}`));
             }
         });
 
         blueArray.forEach(substring => {
             if (substring) {
-                highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, 'blue'));
+                highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, `${BLUE_HEX}`));
             }
         });
 
         greenArray.forEach(substring => {
             if (substring) {
-                highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, 'green'));
+                highlightedRecord = highlightedRecord.replace(new RegExp(escapeRegExp(substring), 'g'), match => replaceWithColor(match, `${GREEN_HEX}`));
             }
         });
 
@@ -304,6 +307,14 @@ document.addEventListener('DOMContentLoaded', function () {
         domainLink.style.fontWeight = 'bold';
         PopUpDiv.appendChild(domainLink);
     }
+
+    function copyToClipboard(element) {
+        var $temp = $("<input>");
+        $("body").append($temp);
+        $temp.val($(element).text()).select();
+        document.execCommand("copy");
+        $temp.remove();
+      }
 
     async function checkRecord(apiUrl, domainName, headerText, callback) {
         let SPFExists = false;
@@ -364,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         SPFSubDomainSpoofable = false;
                                     }
                                 }
-                                let red = ["+all", "?all", "v=spf2.0", "ptr"];
+                                let red = ["+all", "?all", "v=spf2.0","v=spf2", "ptr"];
                                 let blue = ["redirect=", "include:", "exp=", "exists:", " a ", " mx ", " +mx ", " +a ", "%{i}", "%{h}", "%{d}", "%{l}", "%{o}", "%{ir}", "%{l1r+}", "%{s}", "%{d4}", "%{d3}", "%{d2}", "%{d1}", "%{d2r}", "%{l-}", "%{lr-}", "%{l1r-}", "%{v}", `&#34;`, "ip4:", "ip6:"];
                                 let CIDR_Ranges = Array.from({ length: 128 }, (_, i) => `/${127 - i}`); // generate all CIDR notations for IPv4 and IPv6
                                 let combined_blue = blue.concat(CIDR_Ranges);
@@ -383,9 +394,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                         while ((match = ipCidrRegex.exec(eachRecord)) !== null) {
                                             ipv4_ranges.push(match[1]);
                                         }
-                                        smtp_relay = `<a href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</br>nmap -p25 -v --open --script smtp-open-relay ${ipv4_ranges.join(" ")}</a>`;
+                                        smtp_relay = `<a href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p25 -v --open --script smtp-open-relay ${ipv4_ranges.join(" ")}${COMMAND_END}`;
                                     } else {
-                                        smtp_relay = `<a href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</br>nmap -p25 -v --open --script smtp-open-relay <IP RANGE></a>`;
+                                        smtp_relay = `<a href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p25 -v --open --script smtp-open-relay <IP RANGE>${COMMAND_END}`;
                                     }
                                     addItemToDNSRecordList(`${smtp_relay}`, DNSRecordList);
                                 }
@@ -510,15 +521,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (!eachRecord.includes("mail.protection.outlook.com") && !eachRecord.includes("mail.protection.partner.outlook.cn") && eachRecord !== "") {
                                 if (eachRecord.includes(' ')) { // Check for priority in MX record "50 mail.example.com" 
                                     const SMTPServer = eachRecord.split(' ')[1].replace(/\.$/, ''); // remove MX priority abnd trailing dot
-                                    // only update it once with the first mx record
-                                    if (!firstmx){
+                                    if (!firstmx){ // only update it with the first mx record
                                         document.getElementById("appriver").href = `https://tools.appriver.com/SmtpTest.aspx?from=security@${domainName}&to=doesnotexist@${domainName}&svr=${SMTPServer}#_ctl0_uxCphBody_uxPnlOutput`;
                                         document.getElementById("AppRiverOpenRelay").href = `https://tools.appriver.com/OpenRelay.aspx?server=${SMTPServer}#_ctl0_uxCphBody_lblOut`;
                                         firstmx = true;
                                     }
                                     addItemToDNSRecordList(SMTPServer + `<img src="https://icons.duckduckgo.com/ip3/${getRootDomain(SMTPServer)}.ico" style=width:22px;height:22px;max-width:100%;max-height:100%;float:right;>`, DNSRecordList);
                                 } else { // MX doesn't include a priority
-                                    if (!firstmx){
+                                    if (!firstmx){ // only update it with the first mx record
                                         document.getElementById("appriver").href = `https://tools.appriver.com/SmtpTest.aspx?from=security@${domainName}&to=doesnotexist@${domainName}&svr=${eachRecord}#_ctl0_uxCphBody_uxPnlOutput`;
                                         document.getElementById("AppRiverOpenRelay").href = `https://tools.appriver.com/OpenRelay.aspx?server=${eachRecord}#_ctl0_uxCphBody_lblOut`;
                                         firstmx = true;
@@ -527,15 +537,16 @@ document.addEventListener('DOMContentLoaded', function () {
                                 }
                             } else if (eachRecord.includes("mail.protection.outlook.com") || eachRecord.includes("mail.protection.partner.outlook.cn")) {
                                 let SMTPServer = eachRecord.split(' ')[1].replace(/\.$/, '');
-                                // only update it once with the first mx record
-                                if (!firstmx){
+                                if (!firstmx){ // only update it with the first mx record
                                     document.getElementById("appriver").href = `https://tools.appriver.com/SmtpTest.aspx?from=security@${domainName}&to=doesnotexist@${domainName}&svr=${SMTPServer}#_ctl0_uxCphBody_uxPnlOutput`;
                                     document.getElementById("AppRiverOpenRelay").href = `https://tools.appriver.com/OpenRelay.aspx?server=${SMTPServer}#_ctl0_uxCphBody_lblOut`;
                                     firstmx = true;
-                                }                                // Removes the warning banner added to suspicious emails in Outlook
+                                }                                
+                                // Removes the warning banner added to suspicious emails in Outlook
                                 const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:none;}&lt;/style&gt;";
                                 addItemToDNSRecordList(SMTPServer + `<img src="https://icons.duckduckgo.com/ip3/${getRootDomain(SMTPServer)}.ico" style=width:22px;height:22px;max-width:100%;max-height:100%;float:right;>`, DNSRecordList);
-                                const spoofing_direct_send = `<a href="https://www.blackhillsinfosec.com/spoofing-microsoft-365-like-its-1995/">${INFO_IMG} ${RED}Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From ceo@${domainName} -Subject “Test” -Body “${hideWarningBanner}Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl${END}</a>`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From ceo@${domainName} -Subject “Test” -Body “${hideWarningBanner}Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const spoofing_direct_send = `<a href="https://www.blackhillsinfosec.com/spoofing-microsoft-365-like-its-1995/">${INFO_IMG} ${RED}Check if Microsoft Direct Send is Enabled Externally.${END}</a></br>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${spoofing_direct_send}`, DNSRecordList);
                                 incrementBadgeForCurrentTab();
                             }
@@ -546,7 +557,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                     BIMICount += 1;
                                     const blue = ["l=", `&#34;`];
                                     const green = ["a="];
-                                    highlightSubstrings(DNSRecordList, [], blue, green, eachRecord);
+                                    const red = [".jpeg", ".jpg", ".gif", ".png", ".bmp", ".webp", ".tiff", ".tif", ".ico"];
+                                    highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
     
                                     var pattern = /l=([^;]+)/;
                                     var match = pattern.exec(eachRecord);
@@ -617,13 +629,13 @@ document.addEventListener('DOMContentLoaded', function () {
                                 TLSReportingCount += 1;
                                 if (eachRecord.startsWith("v=TLSRPTv1") || eachRecord.startsWith("&#34;v=TLSRPTv1")) {
                                     let red = ["http://"];
-                                    let blue = ["mailto:", "rua=", `&#34;`];
-                                    let green = [];
+                                    let blue = [`&#34;`];
+                                    let green = ["rua=", "mailto:", "https://"];
                                     highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
                                 } else {
                                     let red = ["http://"];
-                                    let blue = ["mailto:", "rua=", `&#34;`];
-                                    let green = [];
+                                    let blue = [`&#34;`];
+                                    let green = ["rua=", "mailto:", "https://"];
                                     incrementBadgeForCurrentTab();
                                     highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
                                     const rfc8460_3 = `<a href="https://datatracker.ietf.org/doc/html/rfc8460#section-3">${INFO_IMG} ${RED}Invalid TLS Reporting Record. It Must Start with "v=TLSRPTv1".${END}</a>`;
@@ -822,17 +834,19 @@ document.addEventListener('DOMContentLoaded', function () {
             let dkimRecord = await getDKIMRecord(DKIMURL);
             if (dkimRecord) {
                 num_DKIM += 1;
+                dkimRecord = encodeHtmlEntities(dkimRecord); // entity encode DNS record
                 dkimRecord = dkimRecord.replace(/&#34;/g, ''); // Remove all quotes
                 const rsaKeySize = await getRSAKeySize(dkimRecord, selector); // can return null
                 const modulus = parsePublicKeyModulus(dkimRecord);
                 if (rsaKeySize && rsaKeySize < 1024) {
                     incrementBadgeForCurrentTab();
                     addItemToDNSRecordList(`RSA-Key Size: ${RED}${rsaKeySize}${END}</br>Selector: ${RED}${selector}${END}</br>Modulus: ${RED}${modulus}${END}</br></br>${RED}${selector}._domainkey.${domainName}${END}</br></br>` + dkimRecord, DNSRecordList);
+                    const Cado_CMD = `git clone https://gitlab.inria.fr/cado-nfs/cado-nfs.git</br>cd cado-nfs</br>make</br>cd build/$(hostname)</br>python3 ./cado-nfs.py ${modulus}`;
                     if (rsaKeySize === "512"){
-                        const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/">${INFO_IMG} ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered in About 4 Days for $20.${END}</a>`;
+                        const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/">${INFO_IMG} ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered in About 4 Days for $20.${END}</a></br>${COMMAND}${Cado_CMD}${COMMAND_END}`;
                         addItemToDNSRecordList(`${Cado_NFS_Tut}`, DNSRecordList);
                     }else{
-                        const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/">${INFO_IMG} ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered.${END}</a>`;
+                        const Cado_NFS_Tut = `<a href="https://yurichev.com/news/20220210_RSA/">${INFO_IMG} ${RED}Cryptographically Insecure Selector "${selector}" Detected. DKIM Private Key Can be Recovered.${END}</a>${COMMAND}${Cado_CMD}${COMMAND_END}`;
                         addItemToDNSRecordList(`${Cado_NFS_Tut}`, DNSRecordList);
                     }
                     notify("Cryptographically Broken RSA Key", `The ${selector} DKIM selector on ${domainName} uses a ${rsaKeySize}-bit RSA key.`);
@@ -873,6 +887,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let ARCRecord = await getDKIMRecord(ARCURL);
             if (ARCRecord) {
                 num_ARC += 1;
+                ARCRecord = encodeHtmlEntities(ARCRecord); // entity encode DNS record
                 ARCRecord = ARCRecord.replace(/&#34;/g, ''); // Remove all quotes
                 const rsaKeySize = await getRSAKeySize(ARCRecord, selector); // can return null
                 const modulus = parsePublicKeyModulus(ARCRecord);
@@ -947,7 +962,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const PopUpDiv = document.createElement('div');
         const DNSRecordList = document.createElement('ul');
         createHeader(PopUpDiv, domainName, "DANE", `https://www.mailhardener.com/kb/how-to-create-a-dane-tlsa-record-with-openssl`);
-        const MXURL = `https://cloudflare-dns.com/dns-query?name=${domainName}&type=MX`;
         let numDANE = 0;
         try {
             const MXURL = `https://cloudflare-dns.com/dns-query?name=${domainName}&type=MX`;
@@ -988,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (JSONDataDANE.Answer && JSONDataDANE.Answer.length > 0) {
                         JSONDataDANE.Answer.forEach(daneRecord => {
                             numDANE += 1;
-                            const DANE_Check = `<a href="https://www.huque.com/bin/danecheck-smtp?domain=${domainName}&namecheck=on&Check=Check">${INFO_IMG} ${daneRecord.name}</br>${transformString(daneRecord.data)}</a>`;
+                            const DANE_Check = `<a href="https://www.huque.com/bin/danecheck-smtp?domain=${domainName}&namecheck=on&Check=Check">${INFO_IMG} ${encodeHtmlEntities(daneRecord.name)}</br>${transformString(encodeHtmlEntities(daneRecord.data))}</a>`;
                             addItemToDNSRecordList(`${DANE_Check}`, DNSRecordList);
                         });
                     }
@@ -1032,12 +1046,13 @@ document.addEventListener('DOMContentLoaded', function () {
             promises.push(checkRecord(DNSKEYRoot, rootDomain, 'DNSSEC', () => {updateLoadingBar();}));
             promises.push(DANE(rootDomain, () => {updateLoadingBar();}));
             await Promise.all(promises);
-        }
-        let container = document.querySelector('.container');
-        const PopUpDiv = document.createElement('hr');
-        PopUpDiv.classList.add('squiggly');
-        container.appendChild(PopUpDiv);
 
+            // Add a divider so its easier to see where the subdomain records start
+            let container = document.querySelector('.container');
+            const PopUpDiv = document.createElement('hr');
+            PopUpDiv.classList.add('squiggly');
+            container.appendChild(PopUpDiv);
+        }
         // Check Subdomain
         const apiUrlSPF = `https://cloudflare-dns.com/dns-query?name=${subDomain}&type=TXT`;
         const apiUrlOldSPF = `https://cloudflare-dns.com/dns-query?name=_spf.${subDomain}&type=TXT`;
@@ -1058,12 +1073,12 @@ document.addEventListener('DOMContentLoaded', function () {
         DANE(subDomain, () => {updateLoadingBar();});
 
         // These take a long time
-        // if (subDomain !== rootDomain){
-        //     DKIM(rootDomain, () => {updateLoadingBar();});
-        //     ARC(rootDomain, () => {updateLoadingBar();});
-        // }
-        // DKIM(subDomain, () => {updateLoadingBar();});
-        // ARC(subDomain, () => {updateLoadingBar();});
+        if (subDomain !== rootDomain){
+            DKIM(rootDomain, () => {updateLoadingBar();});
+            ARC(rootDomain, () => {updateLoadingBar();});
+        }
+        DKIM(subDomain, () => {updateLoadingBar();});
+        ARC(subDomain, () => {updateLoadingBar();});
     }
 
     function getRootDomain(url) {
