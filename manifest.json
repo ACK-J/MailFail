@@ -11,11 +11,10 @@
     "128": "icons/mailfail-128x128.png"
   },
   "browser_action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "128": "icons/mailfail-128x128.png"
     }
   },
-  "permissions": ["activeTab", "notifications", "tabs"]
+  "permissions": ["notifications", "tabs", "storage"]
 }
 
