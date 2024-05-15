@@ -74,25 +74,37 @@
 // SPF PTR record nmap.org
 // p= quarantine https://standardnotes.com/
 // https://nsa.gov Deprecated or Weak DNSKEY Algorithm Used.
+// https://hibbett.com NSEC
+
 
 //TODO
-// Add check for .co.uk
+// Add check for .co.uk and list of TLDs
 // look into adding https://www.whatsmydns.net/api/domain?q=test.ai for registration check
-// Read RFCs
 // SPF record size too big https://datatracker.ietf.org/doc/html/rfc7208#section-3.4 
-// SPF doesnt work (MAIL FROM:) https://datatracker.ietf.org/doc/html/rfc7208#section-11.2
-// DKIM doesnt work https://datatracker.ietf.org/doc/html/rfc6376#section-1.5
-// Add DNSSEC https://dnssec-debugger.verisignlabs.com/huque.com  https://dnsviz.net/d/huque.com/dnssec/
-    // Can you crack a small DNSSEC key?
+// Can you crack a small DNSSEC key?
 // add DKIM and ARC switches
 // explain DANE flags
-// add zone walking attack for NSEC. Add a warning about DOS for NSEC
+// add zone walking NSEC3
 // Parse BIMI PEM file
 // add selector to dkim link
 // add a limit to NSEC recursion 
-
+// figure out what /000. is for NSEC https://box.com BUG
+// ADD DMARC email checks box.com._report._dmarc.emaildefense.proofpoint.com   https://datatracker.ietf.org/doc/html/rfc7489#page-29
+// check for wildcard *._report._dmarc.emaildefense.proofpoint.com
+// NSEC3 dig +dnssec @1.1.1.1 nsec3 hakjdshaskjhd.proton.me
+// The zone signing key (ZSK) - is used to sign and validate the individual record sets within the zone.
+// The key signing key (KSK) - is used to sign the DNSKEY records in the zone.
+// Add CNAME check for _dmarc.
+// If DMARC pct=25 and p=reject then 75% of emails will be quarantined
+// Add commands to spoof anywhere it says "spoofing is possible"
+// Look into "_imap._tcp." and "_pop3._tcp." i
+// highlight NSEC with _domainkey and consider adding all NSEC data
+// Make no DKIM red
 
 // Presentation
+// SPF doesnt work (MAIL FROM:) https://datatracker.ietf.org/doc/html/rfc7208#section-11.2
+// DKIM doesnt work https://datatracker.ietf.org/doc/html/rfc6376#section-1.5
+//     DKIM DOESNT SIGN THE BODY OF THE EMAIL JSUT HEADERS
 // Set up VM with every mailbox
 // register m.ail.fail
 // SpamHaus
@@ -101,6 +113,9 @@
 // Different email clients
 // demo on two ways to send email via powershell
 // you can enumerate all DKIM selectors if using NSEC RRs
+// MUA -> MTA ----> SMTP over Internet -----> MTA -> MDA
+// mail user agent, mail transfer agent (Recieved: headers), mail delivery agent
+// Below Return Path: header you can't trust anything
 
 
 let badge = 0;
@@ -161,7 +176,7 @@ const COMMAND = `<div class="command-container"><span class="inline-command">`;
 const COMMAND_END = `</span></div>`;
 const END = `</span>`;
 const INFO_IMG = `<img src=icons/info.jpg style=width:20px;height:20px;>`;
-const ANCHOR = `a target="_blank"`; // Force links to open in a new tab
+const ANCHOR = `a target="_blank"`; // Force links to open in a new tab outside the popup
 
 document.addEventListener('DOMContentLoaded', function () {
     function getCurrentTabUrl(callback) {
@@ -211,13 +226,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (response.status === 404) {
                     return true; // The domain can be registered
                 } else {
-                    console.error('Error fetching domain info');
-                    throw new Error(`Network response for ${domainName} was not ok`, response.status);
+                    return false;
+                    // console.error('Error fetching domain info');
+                    // throw new Error(`Network response for ${domainName} was not ok`, response.status);
                 }
             });
         } catch (error) {
-            console.error('Error fetching domain info:', error);
-            throw error; // Rethrow the error to be caught by the caller
+            return false;
+            // console.error('Error fetching domain info:', error);
+            // throw error; // Rethrow the error to be caught by the caller
         }
     }
 
@@ -380,8 +397,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                         SPFSubDomainSpoofable = false;
                                     }
                                 }
-                                let red = ["+all", "?all", "v=spf2.0","v=spf2", "ptr", "-all"];
-                                let blue = ["redirect=", "include:", "exp=", "exists:", " a ", " mx ", " +mx ", " +a ", "%{i}", "%{h}", "%{d}", "%{l}", "%{o}", "%{ir}", "%{l1r+}", "%{s}", "%{d4}", "%{d3}", "%{d2}", "%{d1}", "%{d2r}", "%{l-}", "%{lr-}", "%{l1r-}", "%{v}", `&#34;`, "ip4:", "ip6:"];
+                                let red = ["+all", "?all", "v=spf2.0","v=spf2", "ptr"];
+                                let blue = ["redirect=", "include:", "exp=", "-all", "exists:", " a ", " mx ", " +mx ", " +a ", "%{i}", "%{h}", "%{d}", "%{l}", "%{o}", "%{ir}", "%{l1r+}", "%{s}", "%{d4}", "%{d3}", "%{d2}", "%{d1}", "%{d2r}", "%{l-}", "%{lr-}", "%{l1r-}", "%{v}", `&#34;`, "ip4:", "ip6:"];
                                 let CIDR_Ranges = Array.from({ length: 128 }, (_, i) => `/${127 - i}`); // generate all CIDR notations for IPv4 and IPv6
                                 let combined_blue = blue.concat(CIDR_Ranges);
                                 let green = ["~all"];
@@ -399,9 +416,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                         while ((match = ipCidrRegex.exec(eachRecord)) !== null) {
                                             ipv4_ranges.push(match[1]);
                                         }
-                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p25 -v --open --script smtp-open-relay ${ipv4_ranges.join(" ")}${COMMAND_END}`;
+                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay --script-args smtp-open-relay.domain=${domainName} ${ipv4_ranges.join(" ")}  | grep "Server is an open relay\\|MAIL FROM:" -B 5${COMMAND_END}`;
                                     } else {
-                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p25 -v --open --script smtp-open-relay <IP RANGE>${COMMAND_END}`;
+                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay --script-args smtp-open-relay.domain=${domainName} <IP RANGE> | grep "Server is an open relay\\|MAIL FROM:" -B 5${COMMAND_END}`;
                                     }
                                     addItemToDNSRecordList(`${smtp_relay}`, DNSRecordList);
                                 }
@@ -411,8 +428,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     addItemToDNSRecordList(`${rfc7208_2_6}`, DNSRecordList);
                                 }
                                 if (eachRecord.includes("-all")){
-                                    incrementBadgeForCurrentTab();
-                                    const MailHardener_hardfail = `<${ANCHOR} href="https://www.mailhardener.com/blog/why-mailhardener-recommends-spf-softfail-over-fail">${INFO_IMG} ${RED}For Domains that Send Email, Hard Fail (-all) is NOT Recommended as it has Identical Security to Soft Fail but Increases the Risk of Undeliverable Emails.${END}</a>`;
+                                    const MailHardener_hardfail = `<${ANCHOR} href="https://www.mailhardener.com/blog/why-mailhardener-recommends-spf-softfail-over-fail">${INFO_IMG} ${BLUE}For Domains that Send Email, Hard Fail (-all) is NOT Recommended as it has Identical Security to Soft Fail but Increases the Risk of Undeliverable Emails.${END}</a>`;
                                     addItemToDNSRecordList(`${MailHardener_hardfail}`, DNSRecordList);
                                 }
                                 if (eachRecord.includes("ptr")){
@@ -471,6 +487,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 addItemToDNSRecordList(`${rfc7489_7_1_p29}`, DNSRecordList);
                             } 
                             if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100")) {
+                                incrementBadgeForCurrentTab();
                                 const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}The pct= Tag was Set Lower Than 100. Email Spoofing is Possible.${END}</a>`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             }
@@ -709,6 +726,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 highlightSubstrings(DNSRecordList, weak, [], strong, verisign_DNSSEC);
 
                                 if (eachRecord.split(" ")[1] !== '3'){ // the protocol field should always be set to 3
+                                    incrementBadgeForCurrentTab();
                                     const rfc4034_2_1_2 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc4034#section-2.1.2">${INFO_IMG} ${RED}Protocol Field not Set to 3. Record is Invalid.${END}</a>`;
                                     addItemToDNSRecordList(`${rfc4034_2_1_2}`, DNSRecordList);    
                                 } if (weak.some(substring => eachRecord.includes(substring))){
@@ -922,9 +940,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     notify("Cryptographically Broken RSA Key", `The ${selector} DKIM selector on ${domainName} uses a ${rsaKeySize}-bit RSA key.`);
                 } else if (rsaKeySize && rsaKeySize >= 1024) {
                     addItemToDNSRecordList(`<span class="centered">${selector}._domainkey.${domainName}</span>${COMMAND}${dkimRecord}${COMMAND_END}</br>RSA-Key Size: ${GREEN}${rsaKeySize}${END}</br>Selector: ${BLUE}${selector}${END}</br>Base-10 Public Key Modulus (n): ${COMMAND}${modulus}${COMMAND_END}`, DNSRecordList);
-                } else if (!rsaKeySize) { // if null then key is corrupted
-                    incrementBadgeForCurrentTab();
-                    addItemToDNSRecordList(`<span class="centered">${RED}${selector}._domainkey.${domainName}${END}</span>${COMMAND}${dkimRecord}${COMMAND_END}</br>RSA-Key Size: ${RED}Corrupted Key!${END}</br>Selector: ${RED}${selector}${END}`, DNSRecordList);
+                } else if (!rsaKeySize) { // if null then key is corrupted or invalid
+                    addItemToDNSRecordList(`<span class="centered">${RED}${selector}._domainkey.${domainName}${END}</span>${COMMAND}${dkimRecord}${COMMAND_END}</br>RSA-Key Size: ${RED}Corrupted or Invalid Public Key!${END}</br>Selector: ${RED}${selector}${END}`, DNSRecordList);
                 }
                 if (rsaKeySize && (!dkimRecord.startsWith("v=DKIM1") && !dkimRecord.startsWith("&#34;v=DKIM1"))) {  //https://datatracker.ietf.org/doc/html/rfc6376/#section-3.6.1
                     // No version tag in ARC https://datatracker.ietf.org/doc/html/rfc8617#section-4.1.2
@@ -1122,13 +1139,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (data && data.Answer && data.Answer.length > 0) {
             // Extract the data field from the NSEC record
             let nsecData = data.Answer[0].data;
-            
             // Extract the domain names from the NSEC data
             let domainNames = nsecData.split(' ').filter(name => name && name !== '.');
-    
             // The next domain is the first domain in the list
             let nextDomain = domainNames[0];
-    
             return nextDomain;
         } else {
             // No NSEC record found or no Answer section, return null
@@ -1147,14 +1161,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Exit loop if no NSEC record found, or if next domain equals start domain
                 break;
             }
-    
             // Add the current domain to the list of found domains
-            foundDomains.push(nextDomain);
-    
+            foundDomains.push(encodeHtmlEntities(nextDomain)); // Entity Encode Values
             // Update the queried domain for the next iteration
             queriedDomain = nextDomain;
         }
-
         // Sort and filter the found domains array
         foundDomains = foundDomains.sort().filter((domain, index, self) => self.indexOf(domain) === index);
         return foundDomains;
@@ -1171,12 +1182,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (foundDomains.length > 0 && !(foundDomains.length === 1 && foundDomains[0].startsWith("\\000."))){
                     incrementBadgeForCurrentTab();
                     addItemToDNSRecordList(`${foundDomains.join('</br>')}`, DNSRecordList);
-                    const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. This Allows Enueration of Every Record in the Zone (Zone Transfer), As Shown Above.${END}</a>`;
+                    const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. This Allows Enumeration (Zone Transfer) of the Subdomains Shown Above.${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}</a>`;
                     addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     PopUpDiv.appendChild(DNSRecordList);
                     container.appendChild(PopUpDiv);
                 } else{
-                    addItemToDNSRecordList(`${GREEN}This Domain Does Not use NSEC!${RED}`, DNSRecordList);
+                    addItemToDNSRecordList(`${GREEN}This Domain Does Not use NSEC!${END}`, DNSRecordList);
                     PopUpDiv.appendChild(DNSRecordList);
                     container.appendChild(PopUpDiv);
                 }
@@ -1209,9 +1220,9 @@ document.addEventListener('DOMContentLoaded', function () {
             promises.push(checkRecord(apiUrlMTASTSRoot, rootDomain, 'MTA-STS', () => {updateLoadingBar();}));
             promises.push(checkRecord(apiUrlTLSReportingRoot, rootDomain, 'SMTP TLS Reporting', () => {updateLoadingBar();}));
             promises.push(checkRecord(DNSKEYRoot, rootDomain, 'DNSSEC', () => {updateLoadingBar();}));
-            promises.push(NSEC(rootDomain, () => {updateLoadingBar();}));
             promises.push(DANE(rootDomain, () => {updateLoadingBar();}));
             await Promise.all(promises);
+            await NSEC(rootDomain, () => {updateLoadingBar();});
         }
         // Check Subdomain
         const apiUrlSPF = `https://cloudflare-dns.com/dns-query?name=${subDomain}&type=TXT`;
@@ -1230,8 +1241,8 @@ document.addEventListener('DOMContentLoaded', function () {
         checkRecord(apiUrlMTASTS, subDomain, 'MTA-STS', () => {updateLoadingBar();});
         checkRecord(apiUrlTLSReporting, subDomain, 'SMTP TLS Reporting', () => {updateLoadingBar();});
         checkRecord(DNSKEY, subDomain, 'DNSSEC', () => {updateLoadingBar();});
-        NSEC(subDomain, () => {updateLoadingBar();});
         DANE(subDomain, () => {updateLoadingBar();});
+        await NSEC(subDomain, () => {updateLoadingBar();});
 
         // These take a long time
         if (subDomain !== rootDomain){
