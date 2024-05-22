@@ -31,7 +31,7 @@
 // - if the DMARC record is missing p= add a list item that states spoofing is possible. sp is for subdomains and p is the policy for the root domain
 
 // For MX
-// - if the record includes "mail.protection.outlook.com" then add a new list for direct send item that states `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From informationsecurity@${domainName} -Subject “Test” -Body “Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High`
+// - if the record includes "mail.protection.outlook.com" then add a new list for direct send item that states `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From informationsecurity@${domainName} -Subject "Test” -Body "Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High`
 
 // For BIMI
 // - retrieves the SVG
@@ -75,6 +75,8 @@
 // p= quarantine https://standardnotes.com/
 // https://nsa.gov Deprecated or Weak DNSKEY Algorithm Used.
 // https://hibbett.com NSEC
+// Multiple SPF Records https://www.harvard.com https://veridise.com
+// SPF record not starting with v=spf1
 
 
 //TODO
@@ -96,10 +98,11 @@
 // The key signing key (KSK) - is used to sign the DNSKEY records in the zone.
 // Add CNAME check for _dmarc.
 // If DMARC pct=25 and p=reject then 75% of emails will be quarantined
-// Add commands to spoof anywhere it says "spoofing is possible"
 // Look into "_imap._tcp." and "_pop3._tcp." i
 // highlight NSEC with _domainkey and consider adding all NSEC data
 // Make no DKIM red
+// Fix SPF fallback to say that it will not check the root domain and every subdomain needs one https://dmarcly.com/blog/how-spf-works-with-subdomains
+// Port to chrome
 
 // Presentation
 // SPF doesnt work (MAIL FROM:) https://datatracker.ietf.org/doc/html/rfc7208#section-11.2
@@ -177,6 +180,7 @@ const COMMAND_END = `</span></div>`;
 const END = `</span>`;
 const INFO_IMG = `<img src=icons/info.jpg style=width:20px;height:20px;>`;
 const ANCHOR = `a target="_blank"`; // Force links to open in a new tab outside the popup
+const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:none;}&lt;/style&gt;";
 
 document.addEventListener('DOMContentLoaded', function () {
     function getCurrentTabUrl(callback) {
@@ -424,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 }
                                 if (!eachRecord.includes("~all") && !eachRecord.includes("-all")) {
                                     incrementBadgeForCurrentTab();
-                                    const rfc7208_2_6 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-2.6">${INFO_IMG} ${RED}Neither ~all or -all were Found. Email Spoofing is Possible.${END}</a>`;
+                                    const rfc7208_2_6 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-2.6">${INFO_IMG} ${RED}Neither ~all or -all were Found. The SPF Policy is Too Permissive.${END}</a>`;
                                     addItemToDNSRecordList(`${rfc7208_2_6}`, DNSRecordList);
                                 }
                                 if (eachRecord.includes("-all")){
@@ -457,7 +461,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (eachRecord.includes("v=spf1") && !eachRecord.startsWith("v=spf1") && !eachRecord.startsWith("&#34;v=spf1")) {
                                 SPFExists = true;
                                 incrementBadgeForCurrentTab();
-                                const rfc7208_4_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.5">${INFO_IMG} ${RED}The SPF record did not start with 'v=spf1'. The Record is Invalid and Email Spoofing is Possible.${END}</a>`;
+                                const rfc7208_4_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.5">${INFO_IMG} ${RED}The SPF record did not start with 'v=spf1'. The Record is Invalid.${END}</a>`;
                                 addItemToDNSRecordList(`${rfc7208_4_5}`, DNSRecordList);
                             }
                         }
@@ -483,12 +487,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (!eachRecord.startsWith("v=DMARC1") && !eachRecord.startsWith("&#34;v=DMARC1")) {
                                 red.push("v=DMARC1");
                                 incrementBadgeForCurrentTab();
-                                const rfc7489_7_1_p29 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-29">${INFO_IMG} ${RED}The DMARC record did not start with 'v=DMARC1'. The Record is Invalid and Email Spoofing is Possible.${END}</a>`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}The DMARC record did not start with 'v=DMARC1'. The Record is Invalid and Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const rfc7489_7_1_p29 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-29">${INFO_IMG} ${RED}The DMARC record did not start with 'v=DMARC1'. The Record is Invalid and Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_7_1_p29}`, DNSRecordList);
                             } 
                             if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100")) {
                                 incrementBadgeForCurrentTab();
-                                const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}The pct= Tag was Set Lower Than 100. Email Spoofing is Possible.${END}</a>`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}The pct= Tag in the DMARC Record was Set Lower Than 100. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}The pct= Tag was Set Lower Than 100. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             }
                             // Check if p=quarantine or reject is present for the main policy. This gets tricky with sp=
@@ -496,17 +502,20 @@ document.addEventListener('DOMContentLoaded', function () {
                             const policy_regex_r = /[" ;](p=reject)/;
                             if (!policy_regex_q.test(eachRecord) && !policy_regex_r.test(eachRecord)) {
                                 incrementBadgeForCurrentTab();
-                                const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}Neither p=quarantine or p=reject were found. Email Spoofing is Possible.${END}</a>`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}Neither p=quarantine or p=reject were found in the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}Neither p=quarantine or p=reject were found. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             }
                             const policy_regex = /[" ;](p=)/;
                             if (!policy_regex.test(eachRecord)) {
                                 incrementBadgeForCurrentTab();
-                                const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}A Domain Policy (p=) is Required but Missing. Email Spoofing is Possible.${END}</a>`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}A Domain Policy (p=) is Required but Missing from the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}A Domain Policy (p=) is Required but Missing. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             } if (eachRecord.includes("sp=none")) {
                                 incrementBadgeForCurrentTab();
-                                const rfc7489_6_3_p20 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-20">${INFO_IMG} ${RED}The Subdomain Policy (sp=none) is Too Permissive. Email Spoofing from a Subdomain is Possible.${END}</a>`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}A Domain Policy (p=) is Required but Missing from the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const rfc7489_6_3_p20 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-20">${INFO_IMG} ${RED}The Subdomain Policy (sp=none) is Too Permissive. Email Spoofing from a Subdomain is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p20}`, DNSRecordList);
                             } if (eachRecord.includes("fo=1") && !eachRecord.includes("ruf=")) {
                                 const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} OPSEC Tip: Forensic Reporting Enabled (fo=1) Without a Delivery Address (ruf=). No Forensic DMARC Reports are Sent.</a>`;
@@ -572,7 +581,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 // Removes the warning banner added to suspicious emails in Outlook
                                 const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:none;}&lt;/style&gt;";
                                 addItemToDNSRecordList(SMTPServer + `<img src="https://icons.duckduckgo.com/ip3/${getRootDomain(SMTPServer)}.ico" style=width:22px;height:22px;max-width:100%;max-height:100%;float:right;>`, DNSRecordList);
-                                const pwsh_command = `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From ceo@${domainName} -Subject “Test” -Body “${hideWarningBanner}Test” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From ceo@${domainName} -Subject "Microsoft Direct Send Spoofing Test" -Body "${hideWarningBanner}Microsoft Direct Send Spoofing Test" -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
                                 const spoofing_direct_send = `<${ANCHOR} href="https://www.blackhillsinfosec.com/spoofing-microsoft-365-like-its-1995/">${INFO_IMG} ${RED}Check if Microsoft Direct Send is Enabled Externally.${END}</a></br>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${spoofing_direct_send}`, DNSRecordList);
                                 incrementBadgeForCurrentTab();
@@ -781,10 +790,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     addItemToDNSRecordList(`No Subdomain SPF Record Found. The Root Domain SPF Policy is Applied.`, DNSRecordList);
                 } else if (headerText === "SPF" && !SPFExists && SPFSubDomainSpoofable && isSubDomain) {
                     incrementBadgeForCurrentTab();
-                    addItemToDNSRecordList(`${RED}No SPF Record Found or the Root Domain was Misconfigured. Email Spoofing is Possible.${END}`, DNSRecordList);
+                    addItemToDNSRecordList(`${RED}No SPF Record Found or the Root Domain was Misconfigured.${END}`, DNSRecordList);
                 } else if (headerText === "SPF" && !SPFExists && SPFSubDomainSpoofable && !isSubDomain) {
                     incrementBadgeForCurrentTab();
-                    addItemToDNSRecordList(`${RED}No SPF Record Found. Email Spoofing is Possible.${END}`, DNSRecordList);
+                    addItemToDNSRecordList(`${RED}No SPF Record Found.${END}`, DNSRecordList);
                 }
 
                 // if the subdomain is not spoofable and the subdomain record doesnt exist
@@ -793,25 +802,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                 } else if (DMARCCount === 0 && headerText === "DMARC" && isSubDomain) {
                     incrementBadgeForCurrentTab();
-                    const DMARC_Blog = `<${ANCHOR} href="https://www.mailhardener.com/kb/dmarc">${INFO_IMG} ${RED}No DMARC Record Found And/Or the Root Domain was Misconfigured. Subdomain Email Spoofing is Possible.${END}</a>`;
+                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}No DMARC Record Found And/Or the Root Domain DMARC Policy was Misconfigured. Subdomain Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                    const DMARC_Blog = `<${ANCHOR} href="https://www.mailhardener.com/kb/dmarc">${INFO_IMG} ${RED}No DMARC Record Found And/Or the Root Domain DMARC Policy was Misconfigured. Subdomain Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                     addItemToDNSRecordList(`${DMARC_Blog}`, DNSRecordList);
                 } else if (DMARCCount === 0 && headerText === "DMARC" && !isSubDomain) {
                     incrementBadgeForCurrentTab();
-                    const DMARC_Blog = `<${ANCHOR} href="https://www.mailhardener.com/kb/dmarc">${INFO_IMG} ${RED}No DMARC Record Found. Email Spoofing is Possible.${END}</a>`;
+                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}No DMARC Record Found. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                    const DMARC_Blog = `<${ANCHOR} href="https://www.mailhardener.com/kb/dmarc">${INFO_IMG} ${RED}No DMARC Record Found. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                     addItemToDNSRecordList(`${DMARC_Blog}`, DNSRecordList);
                 }
 
                 // If there are more than one valid DMARC records then DMARC discovery will fail
                 if (DMARCCount > 1 && headerText === "DMARC") {
                     incrementBadgeForCurrentTab();
-                    const rfc7489_6_6_3 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.3">${INFO_IMG} ${RED}Multiple DMARC Records Found. Email Spoofing is Possible.${END}</a>`;
+                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}Multiple DMARC Records Found. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                    const rfc7489_6_6_3 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.3">${INFO_IMG} ${RED}Multiple DMARC Records Found. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                     addItemToDNSRecordList(`${rfc7489_6_6_3}`, DNSRecordList);
                 }
 
                 // If there are more than one valid SPF record discovery will fail
                 if (SPFCount > 1 && headerText === "SPF") {
                     incrementBadgeForCurrentTab();
-                    const rfc7208_3_2 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-3.2">${INFO_IMG} ${RED}Multiple SPF Records Found. Email Spoofing is Possible.${END}</a>`;
+                    const rfc7208_3_2 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-3.2">${INFO_IMG} ${RED}Multiple SPF Records Found. This Causes a "PERMERROR" SPF Result.${END}</a>`;
                     addItemToDNSRecordList(`${rfc7208_3_2}`, DNSRecordList);
                 }
 
@@ -1182,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (foundDomains.length > 0 && !(foundDomains.length === 1 && foundDomains[0].startsWith("\\000."))){
                     incrementBadgeForCurrentTab();
                     addItemToDNSRecordList(`${foundDomains.join('</br>')}`, DNSRecordList);
-                    const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. This Allows Enumeration (Zone Transfer) of the Subdomains Shown Above.${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}</a>`;
+                    const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG}</a> ${RED}NSEC is Enabled by the DNSSEC Configuration. This Allows Enumeration (Zone Transfer) of the Subdomains Shown Above.${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                     addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     PopUpDiv.appendChild(DNSRecordList);
                     container.appendChild(PopUpDiv);

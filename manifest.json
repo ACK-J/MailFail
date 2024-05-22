@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "MailFail",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Checks for flaws in the email security of the current domain",
   "background": {
     "scripts": ["background.js"],
