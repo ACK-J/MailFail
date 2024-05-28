@@ -74,7 +74,7 @@
 // SPF PTR record nmap.org
 // p= quarantine https://standardnotes.com/
 // https://nsa.gov Deprecated or Weak DNSKEY Algorithm Used.
-// https://hibbett.com NSEC
+// https://hibbett.com NSEC https://filezilla-project.org
 // Multiple SPF Records https://www.harvard.com https://veridise.com
 // SPF record not starting with v=spf1
 
@@ -85,24 +85,18 @@
 // SPF record size too big https://datatracker.ietf.org/doc/html/rfc7208#section-3.4 
 // Can you crack a small DNSSEC key?
 // add DKIM and ARC switches
-// explain DANE flags
 // add zone walking NSEC3
 // Parse BIMI PEM file
 // add selector to dkim link
 // add a limit to NSEC recursion 
 // figure out what /000. is for NSEC https://box.com BUG
-// ADD DMARC email checks box.com._report._dmarc.emaildefense.proofpoint.com   https://datatracker.ietf.org/doc/html/rfc7489#page-29
-// check for wildcard *._report._dmarc.emaildefense.proofpoint.com
 // NSEC3 dig +dnssec @1.1.1.1 nsec3 hakjdshaskjhd.proton.me
 // The zone signing key (ZSK) - is used to sign and validate the individual record sets within the zone.
 // The key signing key (KSK) - is used to sign the DNSKEY records in the zone.
 // Add CNAME check for _dmarc.
-// If DMARC pct=25 and p=reject then 75% of emails will be quarantined
-// Look into "_imap._tcp." and "_pop3._tcp." i
-// highlight NSEC with _domainkey and consider adding all NSEC data
-// Make no DKIM red
-// Fix SPF fallback to say that it will not check the root domain and every subdomain needs one https://dmarcly.com/blog/how-spf-works-with-subdomains
-// Port to chrome
+// Look into "_imap._tcp." and "_pop3._tcp." _imaps _pop3s _smtp _submission _smtps _caldav _ldap _carddav _xmpp-client _xmpp-server _http _https
+// dig _imaps._tcp.gmail.com SRV +short
+// Port to chrome 
 
 // Presentation
 // SPF doesnt work (MAIL FROM:) https://datatracker.ietf.org/doc/html/rfc7208#section-11.2
@@ -144,8 +138,8 @@ let ARCSelectors = ["arc-20190101","arc-20190102","arc-20190103","arc-20190104",
 
 DKIMSelectors = DKIMSelectors.concat(DKIMCustomSelectors);
 ARCSelectors = ARCSelectors.concat(ARCCustomSelectors);
-DKIMCustomSelectors = null;
-ARCCustomSelectors = null;
+DKIMCustomSelectors = null; // clear mem
+ARCCustomSelectors = null; // clear mem
 
 // // Dynamically add every date between 20100101 and 20240101
 // let startDate = new Date(2011, 9, 1);
@@ -167,7 +161,6 @@ ARCCustomSelectors = null;
 
 // Global variable to check if the root domain's dmarc policy is set to reject. This is important for subdomains
 let DMARCSubDomainSpoofable = true;
-let SPFSubDomainSpoofable = true;
 const COPY_SVG = `<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class=""><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path></svg>`;
 const BLUE_HEX = "#0361ac";
 const RED_HEX = "#CC0000";
@@ -339,6 +332,62 @@ document.addEventListener('DOMContentLoaded', function () {
         domainLink.style.fontWeight = 'bold';
         PopUpDiv.appendChild(domainLink);
     }
+
+    async function DMARCEmailCheck(domain, emailDomains, DNSRecordList) {
+        console.log(emailDomains);
+        let validatedDomains = [];
+        let notValidatedDomains = [];
+        let catchAllValidatedDomains = [];
+        for (let emailDomain of emailDomains){
+            // If a encoded quote is included in the domain; remove it
+            emailDomain = emailDomain.replace(/&#34\s*|&#34/g, '');
+            // Only check third party email domains for ruf and rua
+            if (emailDomain !== domain) {
+                let url = `https://cloudflare-dns.com/dns-query?name=${domain}._report._dmarc.${emailDomain}&type=TXT`;
+                let response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/dns-json'
+                    }
+                });
+                
+                let data = await response.json();
+            
+                if (data && data.Answer && data.Answer.length > 0 && (data.Answer[0].data.startsWith("v=DMARC1") || data.Answer[0].data.startsWith("\"v=DMARC1"))) {
+                    validatedDomains.push(emailDomain);
+                } else {
+                    notValidatedDomains.push(emailDomain);
+                }
+
+                // Check for catch all
+                let urlCatchAll = `https://cloudflare-dns.com/dns-query?name=*._report._dmarc.${emailDomain}&type=TXT`;
+                let responseCatchAll = await fetch(urlCatchAll, {
+                    headers: {
+                        'Accept': 'application/dns-json'
+                    }
+                });
+                
+                let dataCatchAll = await responseCatchAll.json();       
+                if (dataCatchAll && dataCatchAll.Answer && dataCatchAll.Answer.length > 0 && (dataCatchAll.Answer[0].data.startsWith("v=DMARC1") || dataCatchAll.Answer[0].data.startsWith("\"v=DMARC1"))) {
+                    catchAllValidatedDomains.push(emailDomain);
+                }
+            }
+        } 
+
+        const rfc7489_7_1_Validated = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-7.1">${INFO_IMG} ${GREEN}The Following Domain(s) are Correctly Configured to Receive DMARC Reports From ${domain}.</a>${END} [ ${encodeHtmlEntities(validatedDomains.join(", "))} ]`;
+        const rfc7489_7_1_Not_Validated = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-7.1">${INFO_IMG} ${RED}The Following Domain(s) are NOT Correctly Configured to Receive DMARC Reports From ${domain}.</a>${END} [ ${encodeHtmlEntities(notValidatedDomains.join(", "))} ]`;
+        const rfc7489_7_1_Catch_All = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-7.1">${INFO_IMG} ${BLUE}The Following Domain(s) Accepted a Wildcard and are thus Configured to Receive DMARC Reports From any Domain.</a>${END} [ ${encodeHtmlEntities(catchAllValidatedDomains.join(", "))} ]`;
+
+        if (validatedDomains.length > 0){
+            addItemToDNSRecordList(`${rfc7489_7_1_Validated}`, DNSRecordList);
+        }
+        if (notValidatedDomains.length > 0){
+            incrementBadgeForCurrentTab();
+            addItemToDNSRecordList(`${rfc7489_7_1_Not_Validated}`, DNSRecordList);
+        }
+        if (catchAllValidatedDomains.length > 0){
+            addItemToDNSRecordList(`${rfc7489_7_1_Catch_All}`, DNSRecordList);
+        }
+    }
      
     async function checkRecord(apiUrl, domainName, headerText, callback) {
         let SPFExists = false;
@@ -392,15 +441,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (eachRecord.includes("v=spf1")) {
                                 SPFExists = true;
                                 SPFCount += 1;
-                                if (!isSubDomain) {
-                                    if (eachRecord.includes("+all")) {
-                                        SPFSubDomainSpoofable = true;
-                                    } else if (eachRecord.includes("?all")) {
-                                        SPFSubDomainSpoofable = true;
-                                    } else {
-                                        SPFSubDomainSpoofable = false;
-                                    }
-                                }
                                 let red = ["+all", "?all", "v=spf2.0","v=spf2", "ptr"];
                                 let blue = ["redirect=", "include:", "exp=", "-all", "exists:", " a ", " mx ", " +mx ", " +a ", "%{i}", "%{h}", "%{d}", "%{l}", "%{o}", "%{ir}", "%{l1r+}", "%{s}", "%{d4}", "%{d3}", "%{d2}", "%{d1}", "%{d2r}", "%{l-}", "%{lr-}", "%{l1r-}", "%{v}", `&#34;`, "ip4:", "ip6:"];
                                 let CIDR_Ranges = Array.from({ length: 128 }, (_, i) => `/${127 - i}`); // generate all CIDR notations for IPv4 and IPv6
@@ -420,9 +460,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                         while ((match = ipCidrRegex.exec(eachRecord)) !== null) {
                                             ipv4_ranges.push(match[1]);
                                         }
-                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay --script-args smtp-open-relay.domain=${domainName} ${ipv4_ranges.join(" ")}  | grep "Server is an open relay\\|MAIL FROM:" -B 5${COMMAND_END}`;
+                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay --script-args smtp-open-relay.domain=${domainName} ${ipv4_ranges.join(" ")}  | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
                                     } else {
-                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay --script-args smtp-open-relay.domain=${domainName} <IP RANGE> | grep "Server is an open relay\\|MAIL FROM:" -B 5${COMMAND_END}`;
+                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay --script-args smtp-open-relay.domain=${domainName} <IP RANGE> | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
                                     }
                                     addItemToDNSRecordList(`${smtp_relay}`, DNSRecordList);
                                 }
@@ -473,7 +513,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                         }
                         if (headerText === "DMARC" && eachRecord.includes("v=DMARC1")) {
-                            DMARCExists = true;
                             DMARCCount += 1;
                             let red = ["sp=none", "p=none", "fo=0"];
                             let blue = ["aspf=r", "adkim=r", "fo=d", "fo=s", `&#34;`];
@@ -531,7 +570,35 @@ document.addEventListener('DOMContentLoaded', function () {
                                 incrementBadgeForCurrentTab();
                                 const rfc7489_6_3_p20 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-20">${INFO_IMG} ${RED}Malformed ruf= Missing "mailto:". No Forensic DMARC Reports are Sent.${END}</a>`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p20}`, DNSRecordList);
-                            } 
+                            } if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100") && policy_regex_q.test(eachRecord)) {
+                                incrementBadgeForCurrentTab();
+                                const rfc7489_6_6_4 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.4">${INFO_IMG} ${RED}When the Percentage (pct) is Lower than 100 and (p) is set to "quarantine," A Percentage of Spoofed Emails are Allowed and are Treated as if (p) is set to "none" Instead of "quarantine."${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_6_4}`, DNSRecordList);
+                            } if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100") && policy_regex_r.test(eachRecord)) {
+                                incrementBadgeForCurrentTab();
+                                const rfc7489_6_6_4 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.4">${INFO_IMG} ${RED}When the Percentage (pct) is Lower than 100 and (p) is set to "reject," A Percentage of Spoofed Emails are Allowed and are Treated as if (p) is set to "quarantine" Instead of "reject."${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_6_4}`, DNSRecordList);
+                            } if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100") && eachRecord.includes("sp=quarantine")) {
+                                incrementBadgeForCurrentTab();
+                                const rfc7489_6_6_4 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.4">${INFO_IMG} ${RED}When the Percentage (pct) is Lower than 100 and (sp) is set to "quarantine," A Percentage of Subdomain Spoofed Emails are Allowed and are Treated as if (sp) is set to "none" Instead of "quarantine."${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_6_4}`, DNSRecordList);
+                            } if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100") && eachRecord.includes("sp=reject")) {
+                                incrementBadgeForCurrentTab();
+                                const rfc7489_6_6_4 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.4">${INFO_IMG} ${RED}When the Percentage (pct) is Lower than 100 and (sp) is set to "reject," A Percentage of Subdomain Spoofed Emails are Allowed and are Treated as if (sp) is set to "quarantine" Instead of "reject."${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7489_6_6_4}`, DNSRecordList);
+                            } if (eachRecord.includes("rua=") || eachRecord.includes("ruf=")){
+                                // Regular expression to match email addresses and extract domains in one step
+                                const emailRegex = /mailto:([^@]+)@([^\s;,]+)/g;
+                            
+                                // Extract unique domains directly
+                                const uniqueDomains = new Set();
+                                let match;
+                            
+                                while ((match = emailRegex.exec(eachRecord)) !== null) {
+                                    uniqueDomains.add(match[2]);
+                                }
+                                DMARCEmailCheck(domainName, uniqueDomains, DNSRecordList);
+                            }
                             const regex = new RegExp(`&#34;`, 'g');
                             const matches = eachRecord.match(regex)
                             if (matches && matches.length > 2){
@@ -582,7 +649,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:none;}&lt;/style&gt;";
                                 addItemToDNSRecordList(SMTPServer + `<img src="https://icons.duckduckgo.com/ip3/${getRootDomain(SMTPServer)}.ico" style=width:22px;height:22px;max-width:100%;max-height:100%;float:right;>`, DNSRecordList);
                                 const pwsh_command = `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From ceo@${domainName} -Subject "Microsoft Direct Send Spoofing Test" -Body "${hideWarningBanner}Microsoft Direct Send Spoofing Test" -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
-                                const spoofing_direct_send = `<${ANCHOR} href="https://www.blackhillsinfosec.com/spoofing-microsoft-365-like-its-1995/">${INFO_IMG} ${RED}Check if Microsoft Direct Send is Enabled Externally.${END}</a></br>${COMMAND}${pwsh_command}${COMMAND_END}`;
+                                const spoofing_direct_send = `<${ANCHOR} href="https://www.blackhillsinfosec.com/spoofing-microsoft-365-like-its-1995/">${INFO_IMG} ${RED}Check if Microsoft Direct Send is Enabled Externally. CAUTION: You Will Need to Coordinate This Test With An Employee.${END}</a></br>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${spoofing_direct_send}`, DNSRecordList);
                                 incrementBadgeForCurrentTab();
                             } else {
@@ -785,15 +852,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
-                // if the subdomain is not spoofable and the subdomain record doesnt exist
-                if (isSubDomain && !SPFSubDomainSpoofable && !SPFExists && headerText === "SPF") {
-                    addItemToDNSRecordList(`No Subdomain SPF Record Found. The Root Domain SPF Policy is Applied.`, DNSRecordList);
-                } else if (headerText === "SPF" && !SPFExists && SPFSubDomainSpoofable && isSubDomain) {
+                if (headerText === "SPF" && !SPFExists && isSubDomain) {
                     incrementBadgeForCurrentTab();
-                    addItemToDNSRecordList(`${RED}No SPF Record Found or the Root Domain was Misconfigured.${END}`, DNSRecordList);
-                } else if (headerText === "SPF" && !SPFExists && SPFSubDomainSpoofable && !isSubDomain) {
+                    const dmarcly_sudomain_spf = `<${ANCHOR} href="https://dmarcly.com/blog/how-spf-works-with-subdomains">${INFO_IMG} ${RED}No SPF Record Found. Every Subdomain Requires their own SPF Record.${END}</a>`;
+                    addItemToDNSRecordList(`${dmarcly_sudomain_spf}`, DNSRecordList);
+                    const SPF_Guide = `<${ANCHOR} href="https://github.com/internetstandards/toolbox-wiki/blob/main/SPF-how-to.md">${INFO_IMG} ${BLUE}Here's a Guide to Setup SPF.${END}</a>`;
+                    addItemToDNSRecordList(`${SPF_Guide}`, DNSRecordList);
+                } else if (headerText === "SPF" && !SPFExists && !isSubDomain) {
                     incrementBadgeForCurrentTab();
-                    addItemToDNSRecordList(`${RED}No SPF Record Found.${END}`, DNSRecordList);
+                    const rfc7208_4_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.5">${INFO_IMG} ${RED}No SPF Record was Found. This Results in a "none" Outcome, Which Means the SPF Verifier Receives no Information Regarding if the Sender is Authorized or Not.${END}</a>`;
+                    addItemToDNSRecordList(`${rfc7208_4_5}`, DNSRecordList);
+                    const SPF_Guide = `<${ANCHOR} href="https://github.com/internetstandards/toolbox-wiki/blob/main/SPF-how-to.md">${INFO_IMG} ${BLUE}Here's a Guide to Setup SPF.${END}</a>`;
+                    addItemToDNSRecordList(`${SPF_Guide}`, DNSRecordList);
                 }
 
                 // if the subdomain is not spoofable and the subdomain record doesnt exist
@@ -810,6 +880,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}No DMARC Record Found. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
                     const DMARC_Blog = `<${ANCHOR} href="https://www.mailhardener.com/kb/dmarc">${INFO_IMG} ${RED}No DMARC Record Found. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                     addItemToDNSRecordList(`${DMARC_Blog}`, DNSRecordList);
+                    const DMARC_Guide = `<${ANCHOR} href="https://github.com/internetstandards/toolbox-wiki/blob/main/DMARC-how-to.md">${INFO_IMG} ${BLUE}Here's a Guide to Setup DMARC.${END}</a>`;
+                    addItemToDNSRecordList(`${DMARC_Guide}`, DNSRecordList);
                 }
 
                 // If there are more than one valid DMARC records then DMARC discovery will fail
@@ -953,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (rsaKeySize && rsaKeySize >= 1024) {
                     addItemToDNSRecordList(`<span class="centered">${selector}._domainkey.${domainName}</span>${COMMAND}${dkimRecord}${COMMAND_END}</br>RSA-Key Size: ${GREEN}${rsaKeySize}${END}</br>Selector: ${BLUE}${selector}${END}</br>Base-10 Public Key Modulus (n): ${COMMAND}${modulus}${COMMAND_END}`, DNSRecordList);
                 } else if (!rsaKeySize) { // if null then key is corrupted or invalid
-                    addItemToDNSRecordList(`<span class="centered">${RED}${selector}._domainkey.${domainName}${END}</span>${COMMAND}${dkimRecord}${COMMAND_END}</br>RSA-Key Size: ${RED}Corrupted or Invalid Public Key!${END}</br>Selector: ${RED}${selector}${END}`, DNSRecordList);
+                    addItemToDNSRecordList(`<span class="centered">${RED}${selector}._domainkey.${domainName}${END}</span>${COMMAND}${dkimRecord}${COMMAND_END}</br>RSA-Key Size: ${RED}Invalid Public Key!${END}</br>Selector: ${RED}${selector}${END}`, DNSRecordList);
                 }
                 if (rsaKeySize && (!dkimRecord.startsWith("v=DKIM1") && !dkimRecord.startsWith("&#34;v=DKIM1"))) {  //https://datatracker.ietf.org/doc/html/rfc6376/#section-3.6.1
                     // No version tag in ARC https://datatracker.ietf.org/doc/html/rfc8617#section-4.1.2
@@ -968,7 +1040,10 @@ document.addEventListener('DOMContentLoaded', function () {
             PopUpDiv.appendChild(DNSRecordList);
             container.appendChild(PopUpDiv);
         } else {
-            addItemToDNSRecordList(`This Domain Does Not Likely Use DKIM.`, DNSRecordList);
+            incrementBadgeForCurrentTab();
+            addItemToDNSRecordList(`${RED}This Domain Does Not Likely Use DKIM.${END}`, DNSRecordList);
+            const DKIM_Guide = `<${ANCHOR} href="https://github.com/internetstandards/toolbox-wiki/blob/main/DKIM-how-to.md">${INFO_IMG} ${BLUE}Here's a Guide to Setup DKIM.${END}</a>`;
+            addItemToDNSRecordList(`${DKIM_Guide}`, DNSRecordList);
             PopUpDiv.appendChild(DNSRecordList);
             container.appendChild(PopUpDiv);
         }
@@ -1005,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     addItemToDNSRecordList(`<span class="centered">${selector}._domainkey.${domainName}</span>${COMMAND}${ARCRecord}${COMMAND_END}</br>RSA-Key Size: ${GREEN}${rsaKeySize}${END}</br>Selector: ${BLUE}${selector}${END}</br>Base-10 Public Key Modulus (n): ${COMMAND}${modulus}${COMMAND_END}`, DNSRecordList);
                 } else if (!rsaKeySize) { // if null then key is corrupted
                     incrementBadgeForCurrentTab();
-                    addItemToDNSRecordList(`${RED}<span class="centered">${selector}._domainkey.${domainName}${END}</span>${COMMAND}${ARCRecord}${COMMAND_END}</br>RSA-Key Size: ${RED}Corrupted Public Key!${END}</br>Selector: ${RED}${selector}${END}`, DNSRecordList);
+                    addItemToDNSRecordList(`${RED}<span class="centered">${selector}._domainkey.${domainName}${END}</span>${COMMAND}${ARCRecord}${COMMAND_END}</br>RSA-Key Size: ${RED}Invalid Public Key!${END}</br>Selector: ${RED}${selector}${END}`, DNSRecordList);
                 }
             } // No version tag in ARC https://datatracker.ietf.org/doc/html/rfc8617#section-4.1.2
         });
@@ -1025,6 +1100,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function transformString(inputString) {
         if (inputString.startsWith("\\#")){ // error check
             // Remove the leading '\# 35' and leading 0's for each pair
+            // The Cloudflare DNS response returns the record in this weird format
             const cleanedString = inputString.replace(/^\\# 35 /, '');
             
             // Separate the first three pairs by a space and combine the rest
@@ -1112,6 +1188,35 @@ document.addEventListener('DOMContentLoaded', function () {
                                 DANE_Record = transformString(encodeHtmlEntities(daneRecord.data));
                                 const DANE_Check = `<${ANCHOR} href="https://www.huque.com/bin/danecheck-smtp?domain=${domainName}&namecheck=on&Check=Check">${INFO_IMG} ${encodeHtmlEntities(daneRecord.name)}</br></a>${COMMAND}${DANE_Record}${COMMAND_END}</br>Verify the Correctness of the DANE TLSA Record Using the Following Command:</br>${COMMAND}openssl s_client -brief -starttls smtp -dane_tlsa_domain ${mx} -dane_tlsa_rrdata "${DANE_Record}" -connect ${mx}:25 <<< "Q"${COMMAND_END}`;
                                 addItemToDNSRecordList(`${DANE_Check}`, DNSRecordList);
+                                
+                                // Add Comments on Misconfigurations
+                                let usage = daneRecord.data .split(" ")[2];
+                                let selector = daneRecord.data .split(" ")[3];
+                                let matchingType = daneRecord.data .split(" ")[4];
+                                if (usage === "00"){
+                                    incrementBadgeForCurrentTab();
+                                    const rfc7672_3_1_3 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.3">${INFO_IMG} ${RED}Usage 0: PKIX-TA (Not Recommended / Not Used for SMTP)${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7672_3_1_3}`, DNSRecordList);
+                                } else if (usage === "01"){
+                                    incrementBadgeForCurrentTab();
+                                    const rfc7672_3_1_3 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.3">${INFO_IMG} ${RED}Usage 1: PKIX-EE (Not Recommended / Not Used for SMTP)${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7672_3_1_3}`, DNSRecordList);
+                                }
+                                if (selector === "00"){
+                                    incrementBadgeForCurrentTab();
+                                    const SELECTOR_0_FULL_CA = `<${ANCHOR} href="http://dnssec-stats.ant.isi.edu/~viktor/x3hosts.html">${INFO_IMG} ${RED}Selector 0: PKIX-TA (Not Recommended / Not Used for SMTP)${END}</a>`;
+                                    addItemToDNSRecordList(`${SELECTOR_0_FULL_CA}`, DNSRecordList);
+                                }
+                                if (matchingType === "00"){
+                                    incrementBadgeForCurrentTab();
+                                    const MATCH_0 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.2">${INFO_IMG} ${RED}Matching-Type 0: no hasing, full information (Not Recommended / to be Avoided)${END}</a>`;
+                                    addItemToDNSRecordList(`${MATCH_0}`, DNSRecordList);
+                                } else if (matchingType == "02"){
+                                    incrementBadgeForCurrentTab();
+                                    const MATCH_2 = `<${ANCHOR} href="https://www.rfc-editor.org/rfc/rfc6698.html#section-6">${INFO_IMG} ${RED}Matching-Type 2: SHA2-512 hash (Not Recommended / Less Supported)${END}</a>`;
+                                    addItemToDNSRecordList(`${MATCH_2}`, DNSRecordList);
+                                }
+
                             } else{
                                 const DANE_Check = `<${ANCHOR} href="https://www.huque.com/bin/danecheck-smtp?domain=${domainName}&namecheck=on&Check=Check">${INFO_IMG} Invalid TLSA Record Returned:</br>${COMMAND}${RED}${encodeHtmlEntities(daneRecord.name)}${END}${COMMAND_END}</a>`;
                                 addItemToDNSRecordList(`${DANE_Check}`, DNSRecordList);
@@ -1155,10 +1260,10 @@ document.addEventListener('DOMContentLoaded', function () {
             let domainNames = nsecData.split(' ').filter(name => name && name !== '.');
             // The next domain is the first domain in the list
             let nextDomain = domainNames[0];
-            return nextDomain;
+            return [nextDomain, data.Answer[0].data];
         } else {
             // No NSEC record found or no Answer section, return null
-            return null;
+            return [null, null];
         }
     }
     
@@ -1167,14 +1272,14 @@ document.addEventListener('DOMContentLoaded', function () {
         let foundDomains = [];
     
         while (true) {
-            let nextDomain = await queryNSEC(queriedDomain);
+            let [nextDomain, fullRecord] = await queryNSEC(queriedDomain);
     
             if (nextDomain === null || nextDomain === startDomain + ".") {
                 // Exit loop if no NSEC record found, or if next domain equals start domain
                 break;
             }
             // Add the current domain to the list of found domains
-            foundDomains.push(encodeHtmlEntities(nextDomain)); // Entity Encode Values
+            foundDomains.push(encodeHtmlEntities(fullRecord)); // Entity Encode Values
             // Update the queried domain for the next iteration
             queriedDomain = nextDomain;
         }
@@ -1193,13 +1298,19 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(foundDomains => {
                 if (foundDomains.length > 0 && !(foundDomains.length === 1 && foundDomains[0].startsWith("\\000."))){
                     incrementBadgeForCurrentTab();
-                    addItemToDNSRecordList(`${foundDomains.join('</br>')}`, DNSRecordList);
+                    let formattedDomains = foundDomains.map(item => { // Highlight any DKIM Selectors found
+                        if (item.includes('_domainkey')) {
+                            return `${BLUE}${item}${END}`;
+                        }
+                        return item;
+                    }).join('</br>');
+                    addItemToDNSRecordList(`${COMMAND}${formattedDomains}${COMMAND_END}`, DNSRecordList);
                     const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG}</a> ${RED}NSEC is Enabled by the DNSSEC Configuration. This Allows Enumeration (Zone Transfer) of the Subdomains Shown Above.${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                     addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     PopUpDiv.appendChild(DNSRecordList);
                     container.appendChild(PopUpDiv);
                 } else{
-                    addItemToDNSRecordList(`${GREEN}This Domain Does Not use NSEC!${END}`, DNSRecordList);
+                    addItemToDNSRecordList(`${GREEN}This Domain Does Not use NSEC.${END}`, DNSRecordList);
                     PopUpDiv.appendChild(DNSRecordList);
                     container.appendChild(PopUpDiv);
                 }
