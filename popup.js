@@ -77,6 +77,8 @@
 // https://hibbett.com NSEC https://filezilla-project.org
 // Multiple SPF Records https://www.harvard.com https://veridise.com
 // SPF record not starting with v=spf1
+// Misconfigured DMARC email RUA https://yandex.com
+// Example SRV Records https://yandex.com
 
 
 //TODO
@@ -91,12 +93,9 @@
 // add a limit to NSEC recursion 
 // figure out what /000. is for NSEC https://box.com BUG
 // NSEC3 dig +dnssec @1.1.1.1 nsec3 hakjdshaskjhd.proton.me
-// The zone signing key (ZSK) - is used to sign and validate the individual record sets within the zone.
-// The key signing key (KSK) - is used to sign the DNSKEY records in the zone.
 // Add CNAME check for _dmarc.
-// Look into "_imap._tcp." and "_pop3._tcp." _imaps _pop3s _smtp _submission _smtps _caldav _ldap _carddav _xmpp-client _xmpp-server _http _https
-// dig _imaps._tcp.gmail.com SRV +short
 // Port to chrome 
+
 
 // Presentation
 // SPF doesnt work (MAIL FROM:) https://datatracker.ietf.org/doc/html/rfc7208#section-11.2
@@ -113,6 +112,8 @@
 // MUA -> MTA ----> SMTP over Internet -----> MTA -> MDA
 // mail user agent, mail transfer agent (Recieved: headers), mail delivery agent
 // Below Return Path: header you can't trust anything
+// The zone signing key (ZSK) - is used to sign and validate the individual record sets within the zone.
+// The key signing key (KSK) - is used to sign the DNSKEY records in the zone.
 
 
 let badge = 0;
@@ -129,6 +130,7 @@ function clearBadge(){
     });
 }
 
+browser.browserAction.setBadgeBackgroundColor({ color: "#666666" });
 browser.tabs.onActivated.addListener(clearBadge);
 
 let DKIMCustomSelectors = ["0xdeadbeef","1","123","12345","12dkim1","2","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","3","384","512","768","ac_v1","ac_v2","allselector","alpha","amazonses","amazonses2","amazonses3","amp","api","auth","authsmtp","aweber_key_a","aweber_key_b","aweber_key_c","benchmarkemail","beta","bfi","brj","bronto","bronto2","bronto3","ca","care","ccnt","ccnt2","ccnt3","centralsmtp","class","cm","cmail1","cmail2","cmail3","cmail4","coa","corp","Corporate","d2005","d2006","d2007","d2008","d2009","d2010","d2011","d2012","d2013","d2014","d2015","d2016","d2017","d2018","d2019","d2020","d2021","d2022","d2023","d2024","default","delta","dk","dk01","dk02","dk03","dk04","dk05","dk06","dk07","dk08","dk09","dk1","dk10","dk1024","dk11","dk12","dk13","dk14","dk15","dk16","dk17","dk18","dk19","dk2","dk20","dk2005","dk20050327","dk2006","dk2007","dk2008","dk2009","dk2010","dk2011","dk2012","dk2013","dk2014","dk2015","dk2016","dk2017","dk2018","dk2019","dk2020","dk2021","dk2022","dk2023","dk2024","dk2048","dk256","dk3","dk384","dk4","dk5","dk512","dk6","dk7","dk768","dk8","dk9","_dkim","dkim","dkim01","dkim02","dkim03","dkim04","dkim05","dkim06","dkim07","dkim08","dkim09","dkim1","dkim10","dkim1024","dkim11","dkim12","dkim13","dkim14","dkim15","dkim16","dkim17","dkim18","dkim19","dkim2","dkim20","dkim2048","dkim256","dkim3","dkim384","dkim4","dkim5","dkim512","dkim6","dkim7","dkim768","dkim8","dkim9","dkimmail","dkimrnt","dkrnt","dksel","domk","duh","dyn","dyn2","dyn3","dynect","eb1","eb10","eb11","eb12","eb13","eb14","eb15","eb16","eb17","eb18","eb19","eb2","eb20","eb3","eb4","eb5","eb6","eb7","eb8","eb9","ebmailerd","ED-DKIM","ei","elq","elq2","elq3","email0517","emailvision","emarsys","emarsys1","emarsys2","emarsys3","emk01","emma","et","et1","et2","et3","everlytickey1","everlytickey2","exacttarget","exim","exim4u","EXPNSER28042022","facebook","fishbowl","fm1","fm2","fm3","fm4","fm5","fm6","fm7","fm8","fm9","gamma","gears","global","gmmailerd","godaddy","goldlasso","google","googleapps","hubris","hubspot1","hubspot2","hubspot3","icontact","iconzdkim","id","iport","iweb","k1","k10","k11","k12","k13","k14","k15","k16","k17","k18","k19","k2","k20","k3","k4","k5","k6","k7","k8","k9","key","key1","key10","key11","key12","key13","key14","key15","key16","key17","key18","key19","key2","key20","key3","key4","key5","key6","key7","key8","key9","listrak","lists","locaweb","ls1","ls10","ls11","ls12","ls13","ls14","ls15","ls16","ls17","ls18","ls19","ls2","ls20","ls3","ls4","ls5","ls6","ls7","ls8","ls9","m","m1","m10","m1024","m11","m12","m13","m14","m15","m16","m17","m18","m19","m2","m20","m2048","m3","m384","m4","m5","m512","m6","m7","m768","m8","m9","mail","mail1","mail2","mail3","mail4","mail5","mailchannels","mailchannels1","mailchannels2","mailchannels3","mailchannels4","mailchannels5","mail-dkim","mailer","mailgun","mailigen","mail-in","mailjet","mailjet1","mailjet2","mailo","mailrelay","main","mandrill","marketo","mcdkim","mcdkim1","mcdkim2","mcdkim3","mcdkim4","mcdkim5","mdaemon","mesmtp","messagebus","mg","mikd","mimecast","mimecast20230622","mimi","mixmax","mkt","ml1","ml2","ml3","monkey","msa","mx","mxvault","my1","my10","my11","my12","my13","my14","my15","my16","my17","my18","my19","my2","my20","my3","my4","my5","my6","my7","my8","my9","neomailout","NewSelectorA","newyork","nl1","nl2","nl3","one","originating","outbound","pardot","pf2005","pf2006","pf2007","pf2008","pf2009","pf2010","pf2011","pf2012","pf2013","pf2014","pf2015","pf2016","pf2017","pf2018","pf2019","pf2020","pf2021","pf2022","pf2023","pf2024","pic","pm","pm2","pm3","pmta","postfix","postfix.private","postmark","pp","pp1","pp2","pp3","pp4","pp5","pp6","pp7","pp8","pp9","primary","primus","private","prod","proddkim","proddkim1024","proddkim2048","proddkim256","proddkim384","proddkim512","proddkim768","proton","protonmail","protonmail1","protonmail2","protonmail3","protonmail4","protonmail5","protonmail6","protonmail7","protonmail8","protonmail9","pub","publickey","pvt","qcdkim","responsys","rit1608","rocketmail","rsa","rsa1","rsa10","rsa1024","rsa11","rsa12","rsa13","rsa14","rsa15","rsa16","rsa17","rsa18","rsa19","rsa2","rsa20","rsa3","rsa384","rsa4","rsa5","rsa512","rsa6","rsa7","rsa768","rsa8","rsa9","rsys","rsys2","rsys3","s","s1","s10","s1024","s11","s12","s13","s14","s15","s16","s17","s18","s19","s2","s20","s2005","s2006","s2007","s2008","s2009","s2010","s2011","s2012","s2013","s2014","s2015","s2016","s2017","s2018","s2019","s2020","s2021","s2022","s2023","s2024","s2048","s2048g1","s3","s384","s4","s5","s512","s6","s7","s768","s8","s9","safe","sailthru","sasl","scarlet","scooby","scph","scph0121","scph0919","sel1","sel10","sel11","sel12","sel13","sel14","sel15","sel16","sel17","sel18","sel19","sel2","sel20","sel3","sel4","sel5","sel6","sel7","sel8","sel9","selector","selector1","selector10","selector11","selector12","selector13","selector14","selector15","selector16","selector17","selector18","selector19","selector2","selector20","selector3","selector4","selector5","selector6","selector7","selector8","selector9","sendinblue","server","ses","sfmc48","sharedpool","silverpop","sitemail","sl","sl1","sl10","sl11","sl12","sl13","sl14","sl15","sl16","sl17","sl18","sl19","sl2","sl20","sl3","sl4","sl5","sl512","sl6","sl7","sl8","sl9","sm","sm1024","smtp","smtpapi","smtpauth","smtpcomcustomers","smtpout","snowcrash","socketlabs","sparkpost","sparkpost1","sparkpost2","sparkpost3","sparkpostmail","spf","spop","spop1024","spop2048","spop512","squaremail","stigmate","tayl","test","testdk","testdkim","testdkim1024","testdkim2048","testdkim256","testdkim384","testdkim512","testdkim768","tilprivate","to","turbosmtp","v1","v2","v3","v4","v5","vr","vzrelay","wesmail","www","x","yahoo","yandex","yesmail","yesmail1","yesmail10","yesmail11","yesmail12","yesmail13","yesmail14","yesmail15","yesmail16","yesmail17","yesmail18","yesmail19","yesmail2","yesmail20","yesmail3","yesmail4","yesmail5","yesmail6","yesmail7","yesmail8","yesmail9","yibm","ymail","ymail4","yousendit","zendesk1","zoho", "zm1"];
@@ -334,7 +336,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function DMARCEmailCheck(domain, emailDomains, DNSRecordList) {
-        console.log(emailDomains);
         let validatedDomains = [];
         let notValidatedDomains = [];
         let catchAllValidatedDomains = [];
@@ -355,10 +356,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data && data.Answer && data.Answer.length > 0 && (data.Answer[0].data.startsWith("v=DMARC1") || data.Answer[0].data.startsWith("\"v=DMARC1"))) {
                     validatedDomains.push(emailDomain);
                 } else {
-                    notValidatedDomains.push(emailDomain);
+                    notValidatedDomains.push(`${domain}._report._dmarc.${emailDomain}`);
                 }
 
-                // Check for catch all
+                // Check for catch all *._report._dmarc.
                 let urlCatchAll = `https://cloudflare-dns.com/dns-query?name=*._report._dmarc.${emailDomain}&type=TXT`;
                 let responseCatchAll = await fetch(urlCatchAll, {
                     headers: {
@@ -374,8 +375,8 @@ document.addEventListener('DOMContentLoaded', function () {
         } 
 
         const rfc7489_7_1_Validated = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-7.1">${INFO_IMG} ${GREEN}The Following Domain(s) are Correctly Configured to Receive DMARC Reports From ${domain}.</a>${END} [ ${encodeHtmlEntities(validatedDomains.join(", "))} ]`;
-        const rfc7489_7_1_Not_Validated = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-7.1">${INFO_IMG} ${RED}The Following Domain(s) are NOT Correctly Configured to Receive DMARC Reports From ${domain}.</a>${END} [ ${encodeHtmlEntities(notValidatedDomains.join(", "))} ]`;
-        const rfc7489_7_1_Catch_All = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-7.1">${INFO_IMG} ${BLUE}The Following Domain(s) Accepted a Wildcard and are thus Configured to Receive DMARC Reports From any Domain.</a>${END} [ ${encodeHtmlEntities(catchAllValidatedDomains.join(", "))} ]`;
+        const rfc7489_7_1_Not_Validated = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-7.1">${INFO_IMG} ${RED}The Following DNS TXT Record(s) are NOT Correctly Configured to Receive DMARC Reports From ${domain}.</a>${END} [ ${encodeHtmlEntities(notValidatedDomains.join(", "))} ]`;
+        const rfc7489_7_1_Catch_All = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-7.1">${INFO_IMG} ${BLUE}The Following Domain(s) Accepted a Wildcard (*._report._dmarc.) and are thus Configured to Receive DMARC Reports From any Domain.</a>${END} [ ${encodeHtmlEntities(catchAllValidatedDomains.join(", "))} ]`;
 
         if (validatedDomains.length > 0){
             addItemToDNSRecordList(`${rfc7489_7_1_Validated}`, DNSRecordList);
@@ -1041,7 +1042,7 @@ document.addEventListener('DOMContentLoaded', function () {
             container.appendChild(PopUpDiv);
         } else {
             incrementBadgeForCurrentTab();
-            addItemToDNSRecordList(`${RED}This Domain Does Not Likely Use DKIM.${END}`, DNSRecordList);
+            addItemToDNSRecordList(`${RED}This Domain Does not Likely use DKIM.${END}`, DNSRecordList);
             const DKIM_Guide = `<${ANCHOR} href="https://github.com/internetstandards/toolbox-wiki/blob/main/DKIM-how-to.md">${INFO_IMG} ${BLUE}Here's a Guide to Setup DKIM.${END}</a>`;
             addItemToDNSRecordList(`${DKIM_Guide}`, DNSRecordList);
             PopUpDiv.appendChild(DNSRecordList);
@@ -1090,7 +1091,7 @@ document.addEventListener('DOMContentLoaded', function () {
             PopUpDiv.appendChild(DNSRecordList);
             container.appendChild(PopUpDiv);
         } else {
-            addItemToDNSRecordList(`This Domain Does Not Likely Use ARC.`, DNSRecordList);
+            addItemToDNSRecordList(`This Domain Does not Likely use ARC.`, DNSRecordList);
             PopUpDiv.appendChild(DNSRecordList);
             container.appendChild(PopUpDiv);
         }
@@ -1304,13 +1305,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         return item;
                     }).join('</br>');
-                    addItemToDNSRecordList(`${COMMAND}${formattedDomains}${COMMAND_END}`, DNSRecordList);
-                    const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG}</a> ${RED}NSEC is Enabled by the DNSSEC Configuration. This Allows Enumeration (Zone Transfer) of the Subdomains Shown Above.${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                    addItemToDNSRecordList(`The Following Records Were Enumerated From the Domains Zone File Using NSEC Walking.${COMMAND}${formattedDomains}${COMMAND_END}`, DNSRecordList);
+                    const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. To Fully Enumerate the Zone Run The Commands Shown Below.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                     addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     PopUpDiv.appendChild(DNSRecordList);
                     container.appendChild(PopUpDiv);
                 } else{
-                    addItemToDNSRecordList(`${GREEN}This Domain Does Not use NSEC.${END}`, DNSRecordList);
+                    addItemToDNSRecordList(`${GREEN}This Domain Does not use NSEC.${END}`, DNSRecordList);
                     PopUpDiv.appendChild(DNSRecordList);
                     container.appendChild(PopUpDiv);
                 }
@@ -1318,6 +1319,115 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(error => {
                 console.error("NSEC Error:", error);
             });
+        callback();
+    }
+
+
+    async function NSEC3(domainName, callback){
+        const container = document.querySelector('.container');
+        const PopUpDiv = document.createElement('div');
+        const DNSRecordList = document.createElement('ul');
+        createHeader(PopUpDiv, domainName, "NSEC3", `https://blog.apnic.net/2023/01/17/subdomain-enumeration-with-dnssec/`);
+
+        let url = `https://dns.quad9.net:5053/dns-query?name=doesnotexisthopefullyasdfasdf.${domainName}&type=NSEC&do=1`;
+    
+        let response = await fetch(url, {
+            headers: {
+                'Accept': 'application/dns-json'
+            }
+        });
+    
+        let data = await response.json();
+        let HashingAlgorithm = null;
+        let HashingRounds = null;
+        let HashingSalt = null;
+        let checkedNSECConfig = false;
+    
+        // Check if the response contains an Answer section and an NSEC3 record
+        if (data && data.Authority && data.Authority.length > 0) {
+            let NSEC3Hashes = [];
+            for (let authRecord of data.Authority){
+                if (authRecord.type === 50 && !NSEC3Hashes.includes(authRecord.name)){
+                    NSEC3Hashes.push(encodeHtmlEntities(authRecord.name.toLowerCase()));
+                    if (!checkedNSECConfig){ // only check one of the records returned since they should all be the same
+                        checkedNSECConfig = true;
+                        switch (authRecord.data.split(" ")[0]){
+                            case "1":
+                                HashingAlgorithm = "SHA-1"
+                                break;
+                            case "2":
+                                HashingAlgorithm = "SHA-256"
+                                break;
+                            case "3":
+                                HashingAlgorithm = "GOST R 34.11-94"
+                                break;
+                            case "4":
+                                HashingAlgorithm = "SHA-384"
+                                break;
+                        }
+                        HashingRounds = encodeHtmlEntities(authRecord.data.split(" ")[2]);
+                        HashingSalt = encodeHtmlEntities(authRecord.data.split(" ")[3].toLowerCase());
+                    }
+                }
+            }
+            if (NSEC3Hashes.length > 0){
+                addItemToDNSRecordList(`This Domain uses ${HashingRounds} Rounds of ${HashingAlgorithm} Salted with "${HashingSalt}" to Hash Subdomain Names in NSEC3 Records.${COMMAND}${NSEC3Hashes.join("</br>")}${COMMAND_END}`, DNSRecordList);
+                const NSEC3_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC3 is Enabled by the DNSSEC Configuration. This Allows Offline Cracking of the Zone File Using the Commands Below.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone</br>n3map-johnify ${domainName}.zone ${domainName}.john</br>john ${domainName}.zone${COMMAND_END}`;
+                addItemToDNSRecordList(`${NSEC3_Warning}`, DNSRecordList);
+                PopUpDiv.appendChild(DNSRecordList);
+                container.appendChild(PopUpDiv);
+            } else {
+            addItemToDNSRecordList(`This Domain Does not use NSEC3.`, DNSRecordList);
+            PopUpDiv.appendChild(DNSRecordList);
+            container.appendChild(PopUpDiv);
+            }
+        } else {
+            // No NSEC3 record found 
+            addItemToDNSRecordList(`This Domain Does not use NSEC3.`, DNSRecordList);
+            PopUpDiv.appendChild(DNSRecordList);
+            container.appendChild(PopUpDiv);
+        }
+        callback();
+    }
+
+    async function SRV(domain, callback) {
+        const container = document.querySelector('.container');
+        const PopUpDiv = document.createElement('div');
+        const DNSRecordList = document.createElement('ul');
+
+        let SRV_Records = ["_imap", "_imaps", "_pop3", "_pop3s", "_smtp", "_smtps", "_submission", "_caldav", "_ldap", "_carddav", "_xmpp-client", "_xmpp-server", "_http", "_https", "_radius", "_radsec", "_kerberos", "_minecraft", "_sip", "_sips", "_kpasswd", "_ftp", "_jabber", "_h323cs", "_h323ls", "_nfs"];
+        let ValidSRV = [];
+        let ValidSRVRecords = [];
+        for (let record of SRV_Records){
+            let url = `https://cloudflare-dns.com/dns-query?name=${record}._tcp.${domain}&type=SRV`;
+            let response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/dns-json'
+                }
+            });
+            
+            let data = await response.json();
+        
+            if (data && data.Answer && data.Answer.length > 0) {
+                ValidSRV.push(data.Answer[0].name);
+                ValidSRVRecords.push(data.Answer[0].data);
+            }
+        }
+        // Construct a single string with all records separated by <br>
+        let combinedRecords = ValidSRV.map((srv, i) => `${srv} ${BLUE}${ValidSRVRecords[i]}${END}`).join('</br>');
+        let dnsRecordString = `<span class="centered">_Service._Proto.Name</span>${BLUE}<span class="centered">[Priority] [Weight] [Port] [Target]</span>${END}${COMMAND}${combinedRecords}${COMMAND_END}`;
+
+        if (ValidSRV.length > 0){
+            addItemToDNSRecordList(dnsRecordString, DNSRecordList);
+            createHeader(PopUpDiv, domain, "SRV", `https://www.cloudflare.com/learning/dns/dns-records/dns-srv-record/`);
+            PopUpDiv.appendChild(DNSRecordList);
+            container.appendChild(PopUpDiv);
+        } else {
+            addItemToDNSRecordList(`This Domain Does not use SRV Records.`, DNSRecordList);
+            createHeader(PopUpDiv, domain, "SRV", `https://www.cloudflare.com/learning/dns/dns-records/dns-srv-record/`);
+            PopUpDiv.appendChild(DNSRecordList);
+            container.appendChild(PopUpDiv);
+        }
         callback();
     }
     
@@ -1344,8 +1454,11 @@ document.addEventListener('DOMContentLoaded', function () {
             promises.push(checkRecord(apiUrlTLSReportingRoot, rootDomain, 'SMTP TLS Reporting', () => {updateLoadingBar();}));
             promises.push(checkRecord(DNSKEYRoot, rootDomain, 'DNSSEC', () => {updateLoadingBar();}));
             promises.push(DANE(rootDomain, () => {updateLoadingBar();}));
+            promises.push(SRV(rootDomain, () => {updateLoadingBar();}));
             await Promise.all(promises);
             await NSEC(rootDomain, () => {updateLoadingBar();});
+            await NSEC3(rootDomain, () => {updateLoadingBar();});
+
         }
         // Check Subdomain
         const apiUrlSPF = `https://cloudflare-dns.com/dns-query?name=${subDomain}&type=TXT`;
@@ -1365,7 +1478,10 @@ document.addEventListener('DOMContentLoaded', function () {
         checkRecord(apiUrlTLSReporting, subDomain, 'SMTP TLS Reporting', () => {updateLoadingBar();});
         checkRecord(DNSKEY, subDomain, 'DNSSEC', () => {updateLoadingBar();});
         DANE(subDomain, () => {updateLoadingBar();});
+        SRV(subDomain, () => {updateLoadingBar();});
         await NSEC(subDomain, () => {updateLoadingBar();});
+        await NSEC3(subDomain, () => {updateLoadingBar();});
+
 
         // These take a long time
         if (subDomain !== rootDomain){
@@ -1404,9 +1520,9 @@ document.addEventListener('DOMContentLoaded', function () {
             let totalFunctions = null;
             let changedToWhite = false;
             if (subDomain !== rootDomain){
-                totalFunctions = 24; 
+                totalFunctions = 28; 
             } else {
-                totalFunctions = 12; 
+                totalFunctions = 14; 
             }
             
             function updateLoadingBar() {
