@@ -24,3 +24,4 @@ browser.browserAction.onClicked.addListener(async function(tab) {
   localStorage.setItem("url", tab.url);
   localStorage.setItem("tabID", tab.id);
 });
+
