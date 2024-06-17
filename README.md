@@ -1,5 +1,5 @@
 # MailFail
-[<img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="for Firefox" height="60px">](https://addons.mozilla.org/en-US/firefox/addon/port-authority)
+[<img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="for Firefox" height="60px">](https://addons.mozilla.org/en-US/firefox/addon/mailfail)
 
 [![Firefox Rating](https://img.shields.io/amo/stars/css-exfil-protection.svg?label=Rating&style=for-the-badge)](https://addons.mozilla.org/en-US/firefox/addon/mailfail)
 ![Mozilla Add-on](https://img.shields.io/amo/v/mailfail?label=Latest%20Version&style=for-the-badge)
