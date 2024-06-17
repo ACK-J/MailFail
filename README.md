@@ -15,7 +15,6 @@ Ontop of the checks done by the extension, listed below, each section header inc
 - Links to hunter.io which finds email addresses used by the domain
 - Uses MXToolbox to run a "domain health" report
 - Checks if the MX domain will send an unauthenticated email internally
-![image]()
 
 # Example Misconfigurations
 | | | |
