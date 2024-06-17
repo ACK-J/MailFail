@@ -1,8 +1,25 @@
 # MailFail
+[<img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="for Firefox" height="60px">](https://addons.mozilla.org/en-US/firefox/addon/port-authority)
+
+[![Firefox Rating](https://img.shields.io/amo/stars/css-exfil-protection.svg?label=Rating&style=for-the-badge)](https://addons.mozilla.org/en-US/firefox/addon/mailfail)
+![Mozilla Add-on](https://img.shields.io/amo/v/mailfail?label=Latest%20Version&style=for-the-badge)
 
 MailFail identifies and provides commands to exploit a large number of email-related misconfigurations for the current domain and subdomain. The extensions UI popup highlights any misconfigurations in red and links to the supporting documentation.
+# Popup
+<p align="center">
+  <img src="https://github.com/ACK-J/MailFail/assets/60232273/e50189f7-16bc-4664-824e-3e9ac0c5ac34" alt="GUI">
+</p>
 
-Ontop of the checks done by the extension, listed below, each section header includes a link to a resource which autofills the domain and runs checks.
+Ontop of the checks done by the extension, listed below, each section header includes a link to a resource which autofills the domain and runs checks. Aditionally, the four logos at the to of the popup are especially helpful and provide the following functions (from left to right):
+- Checks if the MX domain can be used as an open relay
+- Links to hunter.io which finds email addresses used by the domain
+- Uses MXToolbox to run a "domain health" report
+- Checks if the MX domain will send an unauthenticated email internally
+
+# Example Misconfigurations
+| | | |
+|:-------------------------:|:-------------------------:|:-------------------------:|
+| <img width="287" alt="DKIM" src="https://github.com/ACK-J/MailFail/assets/60232273/3e0267b3-94fb-4475-9b89-07fe205b96ba"></br>A DKIM selector uses a weak RSA key and can be cracked.|<img width="287" alt="NSA" src="https://github.com/ACK-J/MailFail/assets/60232273/c035d56c-2849-440b-8636-4f2061a489f7"></br>Weak DNSKEY algorithm used.|<img width="287" alt="GUI" src="https://github.com/ACK-J/MailFail/assets/60232273/b505f40e-d1cd-485d-9a90-3c82ac24746e"></br>The zone file was extracted including potentially hidden DKIM and ARC selectors. |
 
 # What Misconfigurations are Checked?
 ### SPF
