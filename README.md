@@ -63,6 +63,8 @@ On top of the checks done by the extension, listed below, each section header in
 - Can the private key be cracked?
 - What is the base-10 public key modulus?
 - Does the record start with v=DKIM1?
+- Check for weak RSA hashing algorithms.
+- Check for DKIM testing mode.
 ### ARC
 - Brute force common ARC selectors.
 - Does the record use a short key length? (<1024)
