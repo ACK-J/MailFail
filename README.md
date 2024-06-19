@@ -10,11 +10,11 @@ MailFail identifies and provides commands to exploit a large number of email-rel
   <img src="https://github.com/ACK-J/MailFail/assets/60232273/e50189f7-16bc-4664-824e-3e9ac0c5ac34" alt="GUI">
 </p>
 
-Ontop of the checks done by the extension, listed below, each section header includes a link to a resource which autofills the domain and runs checks. Aditionally, the four logos at the to of the popup are especially helpful and provide the following functions (from left to right):
+On top of the checks done by the extension, listed below, each section header includes a link to a resource that autofills the domain and runs checks. Additionally, the four logos at the top of the popup are especially helpful and provide the following functions (from left to right):
 - Checks if the MX domain can be used as an open relay
 - Links to hunter.io which finds email addresses used by the domain
 - Uses MXToolbox to run a "domain health" report
-- Checks if the MX domain will send an unauthenticated email internally
+- Check if the MX domain will send an unauthenticated email internally
 
 # Example Misconfigurations
 | | | |
@@ -28,14 +28,14 @@ Ontop of the checks done by the extension, listed below, each section header inc
 - Does the record not include a catch all mechanism but does include a redirect?
 - Does the record include ?all or +all which doesn't enforce SPF?
 - Does the record defer to a redirect?
-- Does the record use -all (hardfail) which isn't recommended?
-- Does the record use the PTR mechanims which is marked as "DO NOT USE" in the RFC?
+- Does the record use -all (hardfail) that isn't recommended?
+- Does the record use the PTR mechanism which is marked as "DO NOT USE" in the RFC?
 - Does the record use MailChannels and have "Domain Lockdown" configured?
 - Does the record use multiple pairs of double quotes which can have consequences?
 - Are the domains referenced within the record available to purchase?
 - Is a _spf record used which is no longer supported?
 - Does the domain and subdomain have an SPF record?
-- Is there more than one SPF recrod?
+- Is there more than one SPF record?
 ### DMARC
 - Is the pct= lower than 100?
 - Does the record start with v=DMARC1?
@@ -46,14 +46,14 @@ Ontop of the checks done by the extension, listed below, each section header inc
 - Is rua= or ruf= malformed?
 - If the pct= is lower than 100 the policy enforced is reduced.
 - If the pct= is lower than 100 the subdomain policy enforced is reduced.
-- Are the domains referenced within the record available to purcahse?
+- Are the domains referenced within the record available to purchase?
 - Does the subdomain policy default to the root policy?
 - OSINT link to DMARC.live.
 - Is a CNAME used by DMARC?
 - Can the domain and subdomain emails be spoofed?
 - Is there more than one DMARC record?
-- Are the domains specifed in RUA and RUF configured correctly to receive emails?
-- Are the domains specifed in RUA and RUF configured to receive DMARC reports from any website?
+- Are the domains specified in RUA and RUF configured correctly to receive emails?
+- Are the domains specified in RUA and RUF configured to receive DMARC reports from any website?
 ### DKIM
 - Brute force common DKIM selectors.
 - Does the record use a short key length? (<1024)
@@ -79,7 +79,7 @@ Ontop of the checks done by the extension, listed below, each section header inc
 ### DANE
 - Is DANE used for SMTP?
 - A command is provided to verify the correctness of each record.
-- Is the usage flag incorectly set for SMTP?
+- Is the usage flag incorrectly set for SMTP?
 - Is the selector flag incorrectly set for SMTP?
 - Is the Matching-type flag incorrectly set for SMTP?
 - Is the record valid?
@@ -108,7 +108,7 @@ Ontop of the checks done by the extension, listed below, each section header inc
 - Which hashing algorithm is used?
 - Which salt is used?
 ### SRV
-- Does the server adverstise IMAP, POP, or SMTP services?
+- Does the server advertise IMAP, POP, or SMTP services?
 
 ## Donations ❤️
 If you are feeling generous or really like my work, consider donating
