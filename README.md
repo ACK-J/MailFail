@@ -14,7 +14,7 @@ On top of the checks done by the extension, listed below, each section header in
 - Checks if the MX domain can be used as an open relay
 - Links to hunter.io which finds email addresses used by the domain
 - Uses MXToolbox to run a "domain health" report
-- Check if the MX domain will send an unauthenticated email internally
+- Attempts to send a relayed email using the mail server
 
 # Example Misconfigurations
 | | |
