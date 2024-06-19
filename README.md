@@ -52,6 +52,8 @@ Ontop of the checks done by the extension, listed below, each section header inc
 - Is a CNAME used by DMARC?
 - Can the domain and subdomain emails be spoofed?
 - Is there more than one DMARC record?
+- Are the domains specifed in RUA and RUF configured correctly to receive emails?
+- Are the domains specifed in RUA and RUF configured to receive DMARC reports from any website?
 ### DKIM
 - Brute force common DKIM selectors.
 - Does the record use a short key length? (<1024)
