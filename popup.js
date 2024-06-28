@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             DMARCCount += 1;
                             let red = ["sp=none", "p=none"];
-                            let blue = ["aspf=r", "adkim=r", "fo=d", "fo=s", `&#34;`, "fo=0", "fo=1:d:s", "fo=1:s", "fo=1:d"];
+                            let blue = ["aspf=r", "adkim=r", "fo=d", "fo=s", `&#34;`, "fo=0"];
                             let green = ["sp=reject", "sp=quarantine", "p=reject", "p=quarantine", "rua=", "ruf=", "adkim=s", "aspf=s", "pct=100", "fo=1", "mailto:"];
 
                             if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100")) {
