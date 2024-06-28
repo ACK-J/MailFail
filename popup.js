@@ -1550,7 +1550,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Check 50 random subdomains that dont exists and harvest the unique NSEC3 hashes
         for (let i = 0; i < 50; i++) {
-            let url = `https://dns.quad9.net:5053/dns-query?name=${generateGUID()}.${domainName}&type=NSEC&do=1`;
+            let url = `https://cloudflare-dns.com/dns-query?name=${generateGUID()}.${domainName}&type=NSEC&do=1`;
         
             let response = await fetch(url, {
                 headers: {
