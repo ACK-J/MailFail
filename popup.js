@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             DMARCCount += 1;
                             let red = ["sp=none", "p=none"];
-                            let blue = ["aspf=r", "adkim=r", "fo=d", "fo=s", `&#34;`, "fo=0"];
+                            let blue = ["aspf=r", "adkim=r", "fo=d", "fo=s", `&#34;`, "fo=0", "fo=1:d:s", "fo=1:s", "fo=1:d"];
                             let green = ["sp=reject", "sp=quarantine", "p=reject", "p=quarantine", "rua=", "ruf=", "adkim=s", "aspf=s", "pct=100", "fo=1", "mailto:"];
 
                             if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100")) {
@@ -1491,7 +1491,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const DNSRecordList = document.createElement('ul');
         createHeader(PopUpDiv, domainName, "NSEC", `https://blog.apnic.net/2023/01/17/subdomain-enumeration-with-dnssec/`);
 
-        nsecWalk(domainName)
+        await nsecWalk(domainName)
             .then(foundDomains => {
                 // If there is more than 0 NSEC records returned
                 if (foundDomains.length > 0){
@@ -1501,15 +1501,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         return item;
                     }).join('</br>');
-                    addItemToDNSRecordList(`The Following Records Were Enumerated From the Domains Zone File Using NSEC Walking.${COMMAND}${formattedDomains}${COMMAND_END}`, DNSRecordList);
+                    addItemToDNSRecordList(`The Following Records Were Enumerated From the Domains Zone File Using NSEC Walking. A Maximum of 10,000 Records are Returned by MailFail for Performance Reasons, use the Commands below to Enumerate the Full Zone if Needed.${COMMAND}${formattedDomains}${COMMAND_END}`, DNSRecordList);
                     if (foundDomains[0].includes("\\000.")){
                         const Black_Lies = `<${ANCHOR} href="https://blog.cloudflare.com/black-lies">${INFO_IMG} ${BLUE}NSEC is Configured to use "Black-Lies" to Obscure Records.</a>${END}`;
                         addItemToDNSRecordList(`${Black_Lies}`, DNSRecordList);
-                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC is Enabled in the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC is Enabled in the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                         addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     } else { // If no Black Lies increase badge
                         incrementBadgeForCurrentTab();
-                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled in the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled in the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                         addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     }
 
