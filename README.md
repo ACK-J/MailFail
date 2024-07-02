@@ -4,6 +4,8 @@
 [![Firefox Rating](https://img.shields.io/amo/stars/css-exfil-protection.svg?label=Rating&style=for-the-badge)](https://addons.mozilla.org/en-US/firefox/addon/mailfail)
 ![Mozilla Add-on](https://img.shields.io/amo/v/mailfail?label=Latest%20Version&style=for-the-badge)
 
+Try out the extension on the website https://m.ail.fail
+
 MailFail identifies and provides commands to exploit a large number of email-related misconfigurations for the current domain and subdomain within a web browser. The extension's UI popup highlights any misconfigurations in red and links to the supporting documentation.
 # Popup
 <p align="center">
