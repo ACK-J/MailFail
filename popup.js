@@ -10,6 +10,7 @@
 // Missing DMARC https://www.billyjoel.com/
 // SPF ?all thewindowsclub.com
 // SPF PTR record nmap.org
+// CIDR Range in SPF record to nmap for open relays https://securitylab.github.com/
 // p= quarantine https://standardnotes.com/
 // https://nsa.gov Deprecated or Weak DNSKEY Algorithm Used.
 // https://hibbett.com NSEC https://filezilla-project.org
@@ -30,10 +31,13 @@
 // Can you crack a small DNSSEC key?
 // add DKIM and ARC switches
 // Add a search bar
+// Look into SPF bypass with PTR records bsidesnova.org
+// Add a warning if ruf nor rua is found. The domain owner will not be alerted of spoofed emails
 // Add CADO cmds to ARC
 // Fix extracting BIMI certs
 // Port to chrome 
 // check if root domain includes "smtp._domainkey" in TXT responses
+// Can you use Cracked DKIM key for ARC?
 // CORS PROXY:
 // look into adding https://www.whatsmydns.net/api/domain?q=test.ai for registration check CORS Proxy
 // https://registry.prove.email/api-explorer  CORS proxy
@@ -489,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 SPFExists = true;
                                 SPFCount += 1;
                                 let red = ["+all", "?all", "v=spf2.0","v=spf2", "ptr"];
-                                let blue = ["redirect=", "include:", "relay.mailchannels.net", "exp=", "-all", "exists:", " a ", " mx ", " +mx ", " +a ", "%{i}", "%{h}", "%{d}", "%{l}", "%{o}", "%{ir}", "%{l1r+}", "%{s}", "%{d4}", "%{d3}", "%{d2}", "%{d1}", "%{d2r}", "%{l-}", "%{lr-}", "%{l1r-}", "%{v}", `&#34;`, "ip4:", "ip6:", "a:"];
+                                let blue = ["redirect=", "include:", "relay.mailchannels.net", "exp=", "-all", "-\"\"all", "exists:", " a ", " mx ", " +mx ", " +a ", "%{i}", "%{h}", "%{d}", "%{l}", "%{o}", "%{ir}", "%{l1r+}", "%{s}", "%{d4}", "%{d3}", "%{d2}", "%{d1}", "%{d2r}", "%{l-}", "%{lr-}", "%{l1r-}", "%{v}", `&#34;`, "ip4:", "ip6:", "a:"];
                                 let CIDR_Ranges = Array.from({ length: 128 }, (_, i) => `/${127 - i}`); // generate all CIDR notations for IPv4 and IPv6
                                 let combined_blue = blue.concat(CIDR_Ranges);
                                 let green = ["~all"];
@@ -507,9 +511,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                         while ((match = ipCidrRegex.exec(eachRecord)) !== null) {
                                             ipv4_ranges.push(match[1]);
                                         }
-                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay --script-args smtp-open-relay.domain=${domainName} ${ipv4_ranges.join(" ")}  | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
+                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay ${ipv4_ranges.join(" ")}  | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
                                     } else {
-                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay --script-args smtp-open-relay.domain=${domainName} <IP RANGE> | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
+                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay <IP RANGE> | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
                                     }
                                     addItemToDNSRecordList(`${smtp_relay}`, DNSRecordList);
                                 }
@@ -546,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 }
                                 if (eachRecord.includes("ptr")){
                                     incrementBadgeForCurrentTab();
-                                    const rfc7208_5_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-5.5">${INFO_IMG} ${RED}The PTR Mechanism is Marked as "DO NOT USE" in the RFC.${END}</a>`;
+                                    const rfc7208_5_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-5.5">${INFO_IMG} ${RED}The PTR Mechanism is Marked as "DO NOT USE" in the RFC. A Malicious PTR Record Can Bypass SPF.${END}</a>`;
                                     addItemToDNSRecordList(`${rfc7208_5_5}`, DNSRecordList);
                                 }      
                                 if (eachRecord.includes("include:relay.mailchannels.net")){
@@ -633,7 +637,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                 for (var i = 99; i >= 0; i--) red.push("pct=" + i);
                                 incrementBadgeForCurrentTab();
                             }
-                            highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
                             if (!eachRecord.startsWith("v=DMARC1") && !eachRecord.startsWith("&#34;v=DMARC1")) {
                                 red.push("v=DMARC1");
                                 incrementBadgeForCurrentTab();
@@ -641,6 +644,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                 const rfc7489_7_1_p29 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-29">${INFO_IMG} ${RED}The DMARC record did not start with 'v=DMARC1'. The Record is Invalid and Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_7_1_p29}`, DNSRecordList);
                             } 
+
+                            highlightSubstrings(DNSRecordList, red, blue, green, eachRecord);
+
                             if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100")) {
                                 incrementBadgeForCurrentTab();
                                 const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}The pct= Tag in the DMARC Record was Set Lower Than 100. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
@@ -712,11 +718,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             if (eachRecord.includes("rua=") || eachRecord.includes("ruf=")){
                                 // Validate that the domains specified to receive emails are configured to do so
-                                DMARCEmailCheck(domainName, uniqueDMARCDomains, DNSRecordList);
+                                await DMARCEmailCheck(domainName, uniqueDMARCDomains, DNSRecordList);
                             }
 
                             // Check if the domains used in the email addresses can be registered
-                            DMARCEmailAvailableCheck(uniqueDMARCDomains, DNSRecordList);
+                            await DMARCEmailAvailableCheck(uniqueDMARCDomains, DNSRecordList);
 
                             // Check if the record has multiple pairs of double quotes
                             const regex = new RegExp(`&#34;`, 'g');
@@ -1230,7 +1236,7 @@ document.addEventListener('DOMContentLoaded', function () {
             container.appendChild(PopUpDiv);
         } else {
             incrementBadgeForCurrentTab();
-            addItemToDNSRecordList(`${RED}This Domain Does not Likely use DKIM.${END}`, DNSRecordList);
+            addItemToDNSRecordList(`${RED}This Domain is Unlikely to use DKIM.${END}`, DNSRecordList);
             const DKIM_Guide = `<${ANCHOR} href="https://github.com/internetstandards/toolbox-wiki/blob/main/DKIM-how-to.md">${INFO_IMG} ${BLUE}Here's a Guide to Setup DKIM.${END}</a>`;
             addItemToDNSRecordList(`${DKIM_Guide}`, DNSRecordList);
             PopUpDiv.appendChild(DNSRecordList);
@@ -1279,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', function () {
             PopUpDiv.appendChild(DNSRecordList);
             container.appendChild(PopUpDiv);
         } else {
-            addItemToDNSRecordList(`This Domain Does not Likely use ARC.`, DNSRecordList);
+            addItemToDNSRecordList(`This Domain is Unlikely to use ARC.`, DNSRecordList);
             PopUpDiv.appendChild(DNSRecordList);
             container.appendChild(PopUpDiv);
         }
@@ -1505,11 +1511,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (foundDomains[0].includes("\\000.")){
                         const Black_Lies = `<${ANCHOR} href="https://blog.cloudflare.com/black-lies">${INFO_IMG} ${BLUE}NSEC is Configured to use "Black-Lies" to Obscure Records.</a>${END}`;
                         addItemToDNSRecordList(`${Black_Lies}`, DNSRecordList);
-                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC is Enabled in the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                         addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     } else { // If no Black Lies increase badge
                         incrementBadgeForCurrentTab();
-                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled in the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                         addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     }
 
