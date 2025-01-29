@@ -131,7 +131,7 @@ const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:no
 let firstmx = false; // Only want root domain first MX
 
 // Common Double TLDs
-const commonTLDs = ['co.uk', 'org.uk', 'gov.uk', 'ac.uk', 'edu.au', 'com.au', 'net.au', 'co.jp', 'co.com', 'us.org', 'com.kp'];
+const commonTLDs = ['co.uk', 'org.uk', 'gov.uk', 'ac.uk', 'edu.au', 'com.au', 'net.au', 'co.jp', 'co.com', 'us.org', 'com.kp', 'com.ee'];
 
 document.addEventListener('DOMContentLoaded', function () {
     function getCurrentTabUrl(callback) {
