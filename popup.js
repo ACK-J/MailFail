@@ -9,7 +9,7 @@
 // SPF with Quotes https://ietf.org
 // Missing DMARC https://www.billyjoel.com/
 // SPF ?all thewindowsclub.com
-// SPF PTR record nmap.org
+// SPF PTR record nmap.org bsidesnova.org getmonero.org
 // CIDR Range in SPF record to nmap for open relays https://securitylab.github.com/
 // p= quarantine https://standardnotes.com/
 // https://nsa.gov Deprecated or Weak DNSKEY Algorithm Used.
@@ -500,23 +500,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
                                 highlightSubstrings(DNSRecordList, red, combined_blue, green, eachRecord);
                                 
-                                if (CIDR_Ranges.some(substring => eachRecord.includes(substring))) {
-                                    let smtp_relay;
-                                    if (eachRecord.includes("ip4:")){
-                                        // Regular expression to match IP addresses and CIDR ranges
-                                        const ipCidrRegex = /(?:ip4:)?((?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?)/g;
-                                        // Extract IP addresses and CIDR ranges
-                                        const ipv4_ranges = [];
-                                        let match;
-                                        while ((match = ipCidrRegex.exec(eachRecord)) !== null) {
-                                            ipv4_ranges.push(match[1]);
-                                        }
-                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay ${ipv4_ranges.join(" ")}  | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
-                                    } else {
-                                        smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay <IP RANGE> | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
+                                let smtp_relay;
+                                if (eachRecord.includes("ip4:")){
+                                    // Regular expression to match IP addresses and CIDR ranges
+                                    const ipCidrRegex = /(?:ip4:)?((?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?)/g;
+                                    // Extract IP addresses and CIDR ranges
+                                    const ipv4_ranges = [];
+                                    let match;
+                                    while ((match = ipCidrRegex.exec(eachRecord)) !== null) {
+                                        ipv4_ranges.push(match[1]);
                                     }
-                                    addItemToDNSRecordList(`${smtp_relay}`, DNSRecordList);
+                                    smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay ${ipv4_ranges.join(" ")}  | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
+                                } else {
+                                    smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay <IP RANGE> | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
                                 }
+                                addItemToDNSRecordList(`${smtp_relay}`, DNSRecordList);
+                                
                                 const catch_all = ["~all", "+all", "?all", "-all"];
                                 // Check that no catch alls were given and no redirect was found
                                 if (!catch_all.some(alls => eachRecord.includes(alls)) && !eachRecord.includes("redirect=")) {
@@ -584,10 +583,101 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         if (headerText == "_SPF") {
                             if (eachRecord.includes("v=spf1")) {
-                                addItemToDNSRecordList(`${BLUE}${eachRecord}${END}`, DNSRecordList);
-                                const mx_toolbox_spf_deprecated = `<${ANCHOR} href="https://mxtoolbox.com/problem/spf/spf-record-deprecated">${INFO_IMG} The _spf.${domainName} TXT Record Was Deprecated in 2014. However, It May Be Used by the "include" or "redirect" Mechanisms.</a>`;
+                                SPFExists = true;
+                                SPFCount += 1;
+                                let red = ["+all", "?all", "v=spf2.0","v=spf2", "ptr"];
+                                let blue = ["redirect=", "include:", "relay.mailchannels.net", "exp=", "-all", "-\"\"all", "exists:", " a ", " mx ", " +mx ", " +a ", "%{i}", "%{h}", "%{d}", "%{l}", "%{o}", "%{ir}", "%{l1r+}", "%{s}", "%{d4}", "%{d3}", "%{d2}", "%{d1}", "%{d2r}", "%{l-}", "%{lr-}", "%{l1r-}", "%{v}", `&#34;`, "ip4:", "ip6:", "a:"];
+                                let CIDR_Ranges = Array.from({ length: 128 }, (_, i) => `/${127 - i}`); // generate all CIDR notations for IPv4 and IPv6
+                                let combined_blue = blue.concat(CIDR_Ranges);
+                                let green = ["~all"];
+
+                                highlightSubstrings(DNSRecordList, red, combined_blue, green, eachRecord);
+
+                                // Depecration Warning
+                                const mx_toolbox_spf_deprecated = `<${ANCHOR} href="https://mxtoolbox.com/problem/spf/spf-record-deprecated">${INFO_IMG} ${BLUE}The _spf.${domainName} TXT Record Was Deprecated in 2014. However, It May Be Used by the "include" or "redirect" Mechanisms.${END}</a>`;
                                 addItemToDNSRecordList(`${mx_toolbox_spf_deprecated}`, DNSRecordList);
+                                
+                                let smtp_relay;
+                                if (eachRecord.includes("ip4:")){
+                                    // Regular expression to match IP addresses and CIDR ranges
+                                    const ipCidrRegex = /(?:ip4:)?((?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?)/g;
+                                    // Extract IP addresses and CIDR ranges
+                                    const ipv4_ranges = [];
+                                    let match;
+                                    while ((match = ipCidrRegex.exec(eachRecord)) !== null) {
+                                        ipv4_ranges.push(match[1]);
+                                    }
+                                    smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay ${ipv4_ranges.join(" ")}  | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
+                                } else {
+                                    smtp_relay = `<${ANCHOR} href="https://mailtrap.io/blog/smtp-relay/">${INFO_IMG} ${BLUE}Check if Any IPs Within the CIDR Ranges are SMTP Open Relays.${END}</a></br>${COMMAND}nmap -p 25,587,465 -v --open --script smtp-open-relay <IP RANGE> | grep "Server is an open relay\\|MAIL FROM:" -B 6${COMMAND_END}`;
+                                }
+                                addItemToDNSRecordList(`${smtp_relay}`, DNSRecordList);
+
+                                const catch_all = ["~all", "+all", "?all", "-all"];
+                                // Check that no catch alls were given and no redirect was found
+                                if (!catch_all.some(alls => eachRecord.includes(alls)) && !eachRecord.includes("redirect=")) {
+                                    incrementBadgeForCurrentTab();
+                                    const rfc7208_4_7 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.7">${INFO_IMG} ${RED}Neither ~all, -all, or redirect= were Found. The SPF Policy Defaults to ?all.${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7208_4_7}`, DNSRecordList);
+                                }
+                                 // Check that no catch alls were given and a redirect was found
+                                if (!catch_all.some(alls => eachRecord.includes(alls)) && eachRecord.includes("redirect=")) {
+                                    const rfc7208_4_7 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.7">${INFO_IMG} ${BLUE}Neither ~all or -all were Found. The SPF Policy Defers to the Redirect.${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7208_4_7}`, DNSRecordList);
+                                }
+                                if (eachRecord.includes("?all")) {
+                                    incrementBadgeForCurrentTab();
+                                    const rfc7208_4_6_2 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.6.2">${INFO_IMG} ${RED}The ?all Mechanism and Qualifier is Used. This SPF Default Result is "Neutral" Allowing SPF to be Bypassed.${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7208_4_6_2}`, DNSRecordList);
+                                }
+                                if (eachRecord.includes("+all")) {
+                                    incrementBadgeForCurrentTab();
+                                    const rfc7208_4_6_2 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.6.2">${INFO_IMG} ${RED}The +all Mechanism and Qualifier is Used. This SPF Default Result is "Pass" Allowing SPF to be Bypassed.${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7208_4_6_2}`, DNSRecordList);
+                                }
+                                if (!catch_all.some(alls => eachRecord.includes(alls)) && eachRecord.includes(" all")) { // all mechanism used with a qualifier defaults to +
+                                    incrementBadgeForCurrentTab();
+                                    const rfc7208_4_6_2 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.6.2">${INFO_IMG} ${RED}The all Mechanism was Used Without a Qualifier. The SPF Default Result is "Pass" Allowing SPF to be Bypassed.${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7208_4_6_2}`, DNSRecordList);
+                                }
+                                if (eachRecord.includes("-all")){
+                                    const MailHardener_hardfail = `<${ANCHOR} href="https://www.mailhardener.com/blog/why-mailhardener-recommends-spf-softfail-over-fail">${INFO_IMG} ${BLUE}For Domains that Send Email, Hard Fail (-all) is NOT Recommended as it has Identical Security to Soft Fail but Increases the Risk of Undeliverable Emails.${END}</a>`;
+                                    addItemToDNSRecordList(`${MailHardener_hardfail}`, DNSRecordList);
+                                }
+                                if (eachRecord.includes("ptr")){
+                                    incrementBadgeForCurrentTab();
+                                    const rfc7208_5_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-5.5">${INFO_IMG} ${RED}The PTR Mechanism is Marked as "DO NOT USE" in the RFC. A Malicious PTR Record Can Bypass SPF.${END}</a>`;
+                                    addItemToDNSRecordList(`${rfc7208_5_5}`, DNSRecordList);
+                                }      
+                                if (eachRecord.includes("include:relay.mailchannels.net")){
+                                    const mailchannels = `<${ANCHOR} href="https://github.com/byt3bl33d3r/SpamChannel">${INFO_IMG} ${BLUE}This Domain uses MailChannels as an Email Delivery Platform. Check if they Enabled "Domain Lockdown".${END}</a>`;
+                                    addItemToDNSRecordList(`${mailchannels}`, DNSRecordList);
+                                }                      
+                                const regex = new RegExp(`&#34;`, 'g');
+                                const matches = eachRecord.match(regex)
+                                if (matches && matches.length > 2){
+                                    const SPF_Quotes = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-3.3">${INFO_IMG} ${BLUE}The SPF Record Contains Multiple Pairs of Double Quotes, the Record MUST be Treated as if These Strings are Concatenated Together Without Adding Spaces. This Sometimes has Unintended Consequences.${END}</a>`;
+                                    addItemToDNSRecordList(`${SPF_Quotes}`, DNSRecordList);
+                                }
+                                await checkSPFDomainAvailable(eachRecord)
+                                    .then(([availableDomains, spfDomains]) => {
+                                        if (availableDomains.length > 0) {
+                                            const purchase_domain_link = `<${ANCHOR} href="https://www.namecheap.com/domains/registration/results/?domain=${availableDomains[0]}">${INFO_IMG} ${RED}The Following Domain(s) Used by the SPF Record are Available to Purchase!${END} </br>[ ${availableDomains.join(", ")} ]</a>`;
+                                            addItemToDNSRecordList(`${purchase_domain_link}`, DNSRecordList);
+                                            incrementBadgeForCurrentTab();
+                                            notify("Serious SPF Misconfiguration Found", "The SPF record included reference to an authoritative domain that you can purchase and spoof valid emails from");
+                                        } else {
+                                            addItemToDNSRecordList(`${GREEN}No SPF Domains Available to Purchase.${END} [ ${spfDomains.join(", ")} ]`, DNSRecordList);
+                                        }
+                                    });
                             }
+                            if (eachRecord.includes("v=spf1") && !eachRecord.startsWith("v=spf1") && !eachRecord.startsWith("&#34;v=spf1")) {
+                                SPFExists = true;
+                                incrementBadgeForCurrentTab();
+                                const rfc7208_4_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-4.5">${INFO_IMG} ${RED}The SPF record did not start with 'v=spf1'. The Record is Invalid.${END}</a>`;
+                                addItemToDNSRecordList(`${rfc7208_4_5}`, DNSRecordList);
+                            }
+
                         }
                         if (headerText == "ADSP"){
                             let red = [];
@@ -1110,12 +1200,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function getRSAKeySize(dkimRecord, selector) {
-        const pMatch = dkimRecord.match(/p=([^\s;]+)/);
+        const pMatch = dkimRecord.replace(/\s+/g, '').match(/p=([^\s;]+)/); // Remove spaces and find p=
         if (!pMatch) return null; // Couldn't find the RSA key
 
-        const key = pMatch[1];
         try {
-            const keyBinaryString = atob(key); // Decode Base64 string
+            const base64Key = pMatch[1];
+            const keyBinaryString = atob(base64Key); // Decode Base64 string
             const keyUint8Array = new Uint8Array(keyBinaryString.length);
             for (let i = 0; i < keyBinaryString.length; ++i) {
                 keyUint8Array[i] = keyBinaryString.charCodeAt(i);
@@ -1134,6 +1224,41 @@ document.addEventListener('DOMContentLoaded', function () {
             return null;
         }
     }
+
+    // function getRSAKeySize(dkimRecord, selector) {
+    //     // Extract the public key part after p=
+    //     const pMatch = dkimRecord.match(/p=([^\s;]+)/);
+    //     if (!pMatch) return null; // Couldn't find the RSA key
+
+    //     try {
+    //         // Get the base64 encoded public key
+    //         const base64Key = pMatch[1].replace(/["\s]+/g, ''); // Remove spaces and double quotes
+            
+    //         // Decode base64 to binary
+    //         const binaryKey = atob(base64Key);
+            
+    //         // Convert to Uint8Array for easier processing
+    //         const bytes = new Uint8Array(binaryKey.length);
+    //         for (let i = 0; i < binaryKey.length; i++) {
+    //             bytes[i] = binaryKey.charCodeAt(i);
+    //         }
+            
+    //         // For RSA public keys in X.509 SubjectPublicKeyInfo format:
+    //         // The key size can be determined from the modulus length
+    //         // The modulus starts after the ASN.1 header
+    //         // For 2048-bit keys, the modulus is 256 bytes
+    //         // For 1024-bit keys, the modulus is 128 bytes
+            
+    //         // The modulus length in bytes will be the key size in bits / 8
+    //         const modulusLength = bytes.length - 33; // Subtract ASN.1 header length
+    //         const keySize = modulusLength * 8 - 8;
+    //         return keySize;
+    //     } catch (error){
+    //         console.error("Error importing RSA key:", error, selector);
+    //         return null;
+    //     }
+
+    // }
 
 
     function parsePublicKeyModulus(dkimRecord) {
@@ -1511,11 +1636,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (foundDomains[0].includes("\\000.")){
                         const Black_Lies = `<${ANCHOR} href="https://blog.cloudflare.com/black-lies">${INFO_IMG} ${BLUE}NSEC is Configured to use "Black-Lies" to Obscure Records.</a>${END}`;
                         addItemToDNSRecordList(`${Black_Lies}`, DNSRecordList);
-                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                         addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     } else { // If no Black Lies increase badge
                         incrementBadgeForCurrentTab();
-                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
                         addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     }
 
@@ -1599,7 +1724,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (NSEC3Hashes.length > 0){
             addItemToDNSRecordList(`This Domain uses ${BLUE}${HashingRounds}${END} Rounds of ${BLUE}${HashingAlgorithm}${END} Salted with ${BLUE}"${HashingSalt}"${END} to Hash Subdomain Names in NSEC3 Records. A Subset of the NSEC3 Hashes are Shown Below. To Get a Complete List of Hashes Run the Commands Below.${COMMAND}${NSEC3Hashes.join("</br>")}${COMMAND_END}`, DNSRecordList);
-            const NSEC3_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC3 is Enabled by the DNSSEC Configuration. This Allows Offline Cracking of the Zone File.</a>${END}${COMMAND}pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone</br>n3map-johnify ${domainName}.zone ${domainName}.john</br>john ${domainName}.zone${COMMAND_END}`;
+            const NSEC3_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC3 is Enabled by the DNSSEC Configuration. This Allows Offline Cracking of the Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone</br>n3map-hashcatify ${domainName}.zone ${domainName}.hashcat</br>hashcat -m 8300 ${domainName}.hashcat /path/to/wordlist${COMMAND_END}`;
             addItemToDNSRecordList(`${NSEC3_Warning}`, DNSRecordList);
             PopUpDiv.appendChild(DNSRecordList);
             container.appendChild(PopUpDiv);
