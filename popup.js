@@ -127,7 +127,6 @@ const COMMAND_END = `</span></div>`;
 const END = `</span>`;
 const INFO_IMG = `<img src=icons/info.jpg style=width:20px;height:20px;>`;
 const ANCHOR = `a target="_blank"`; // Force links to open in a new tab outside the popup
-const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:none;}&lt;/style&gt;";
 let firstmx = false; // Only want root domain first MX
 
 // Common Double TLDs
@@ -730,7 +729,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (!eachRecord.startsWith("v=DMARC1") && !eachRecord.startsWith("&#34;v=DMARC1")) {
                                 red.push("v=DMARC1");
                                 incrementBadgeForCurrentTab();
-                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}The DMARC record did not start with 'v=DMARC1'. The Record is Invalid and Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "The DMARC record did not start with 'v=DMARC1'. The Record is Invalid and Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
                                 const rfc7489_7_1_p29 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-29">${INFO_IMG} ${RED}The DMARC record did not start with 'v=DMARC1'. The Record is Invalid and Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_7_1_p29}`, DNSRecordList);
                             } 
@@ -739,7 +738,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             if (eachRecord.includes("pct=") && !eachRecord.includes("pct=100")) {
                                 incrementBadgeForCurrentTab();
-                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}The pct= Tag in the DMARC Record was Set Lower Than 100. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "The pct= Tag in the DMARC Record was Set Lower Than 100. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
                                 const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}The pct= Tag was Set Lower Than 100. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             }
@@ -748,19 +747,19 @@ document.addEventListener('DOMContentLoaded', function () {
                             const policy_regex_r = /[" ;](p=reject)/;
                             if (!policy_regex_q.test(eachRecord) && !policy_regex_r.test(eachRecord)) {
                                 incrementBadgeForCurrentTab();
-                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}Neither p=quarantine or p=reject were found in the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "Neither p=quarantine or p=reject were found in the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
                                 const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}Neither p=quarantine or p=reject were found. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             }
                             const policy_regex = /[" ;](p=)/;
                             if (!policy_regex.test(eachRecord)) {
                                 incrementBadgeForCurrentTab();
-                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}A Domain Policy (p=) is Required but Missing from the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "A Domain Policy (p=) is Required but Missing from the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
                                 const rfc7489_6_3_p18 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-18">${INFO_IMG} ${RED}A Domain Policy (p=) is Required but Missing. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                             } if (eachRecord.includes("sp=none")) {
                                 incrementBadgeForCurrentTab();
-                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}A Domain Policy (p=) is Required but Missing from the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "A Domain Policy (p=) is Required but Missing from the DMARC Record. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
                                 const rfc7489_6_3_p20 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#page-20">${INFO_IMG} ${RED}The Subdomain Policy (sp=none) is Too Permissive. Email Spoofing from a Subdomain is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${rfc7489_6_3_p20}`, DNSRecordList);
                             } if (eachRecord.includes("fo=1") && !eachRecord.includes("ruf=")) {
@@ -867,9 +866,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                     firstmx = true;
                                 }                                
                                 // Removes the warning banner added to suspicious emails in Outlook
-                                const hideWarningBanner = "&lt;style&gt;table,tr{width:1px;height:1px;display:none;}&lt;/style&gt;";
                                 addItemToDNSRecordList(`<span style="max-width: 80%;">${SMTPServer}</span><img src="https://icons.duckduckgo.com/ip3/${getRootDomain(SMTPServer)}.ico" style=width:22px;height:22px;max-width:100%;max-height:100%;float:right;>`, DNSRecordList);
-                                const pwsh_command = `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From ceo@${domainName} -Subject "Microsoft Direct Send Spoofing Test" -Body "${hideWarningBanner}Microsoft Direct Send Spoofing Test" -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                                const pwsh_command = `Send-MailMessage -SmtpServer ${SMTPServer} -To Victim@${domainName} -From ceo@${domainName} -Subject "Microsoft Direct Send Spoofing Test" -Body "Microsoft Direct Send Spoofing Test" -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
                                 const spoofing_direct_send = `<${ANCHOR} href="https://www.blackhillsinfosec.com/spoofing-microsoft-365-like-its-1995/">${INFO_IMG} ${RED}Check if Microsoft Direct Send is Enabled Externally. CAUTION: You Will Need to Coordinate This Test With An Employee.${END}</a></br>${COMMAND}${pwsh_command}${COMMAND_END}`;
                                 addItemToDNSRecordList(`${spoofing_direct_send}`, DNSRecordList);
                                 incrementBadgeForCurrentTab();
@@ -1149,12 +1147,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     addItemToDNSRecordList(`${rfc7489_6_3_p18}`, DNSRecordList);
                 } else if (DMARCCount === 0 && headerText === "DMARC" && isSubDomain) {
                     incrementBadgeForCurrentTab();
-                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}No DMARC Record Found And/Or the Root Domain DMARC Policy was Misconfigured. Subdomain Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "No DMARC Record Found And/Or the Root Domain DMARC Policy was Misconfigured. Subdomain Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
                     const DMARC_Blog = `<${ANCHOR} href="https://www.mailhardener.com/kb/dmarc">${INFO_IMG} ${RED}No DMARC Record Found And/Or the Root Domain DMARC Policy was Misconfigured. Subdomain Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                     addItemToDNSRecordList(`${DMARC_Blog}`, DNSRecordList);
                 } else if (DMARCCount === 0 && headerText === "DMARC" && !isSubDomain) {
                     incrementBadgeForCurrentTab();
-                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}No DMARC Record Found. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
+                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "No DMARC Record Found. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
                     const DMARC_Blog = `<${ANCHOR} href="https://www.mailhardener.com/kb/dmarc">${INFO_IMG} ${RED}No DMARC Record Found. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                     addItemToDNSRecordList(`${DMARC_Blog}`, DNSRecordList);
                     const DMARC_Guide = `<${ANCHOR} href="https://github.com/internetstandards/toolbox-wiki/blob/main/DMARC-how-to.md">${INFO_IMG} ${BLUE}Here's a Guide to Setup DMARC.${END}</a>`;
@@ -1164,8 +1162,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 // If there are more than one valid DMARC records then DMARC discovery will fail
                 if (DMARCCount > 1 && headerText === "DMARC") {
                     incrementBadgeForCurrentTab();
-                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "${hideWarningBanner}Multiple DMARC Records Found. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -Priority High -UseSsl`;
-                    const rfc7489_6_6_3 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.3">${INFO_IMG} ${RED}Multiple DMARC Records Found. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
+                    const pwsh_command = `Send-MailMessage -SmtpServer &lt;Recipient MX Record&gt; -To Victim@example.com -From ceo@${domainName} -Subject "Email Spoofing Test” -Body "Multiple DMARC Records Found. Email Spoofing is Possible.” -BodyAsHTML -DeliveryNotificationOption Never -UseSsl`;
+                    const rfc7489_6_6_3 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.3">${INFO_IMG} ${RED}Multiple DMARC Records Found, Invalid Configuration. Email Spoofing is Possible.${END}</a>${COMMAND}${pwsh_command}${COMMAND_END}`;
                     addItemToDNSRecordList(`${rfc7489_6_6_3}`, DNSRecordList);
                 }
 
