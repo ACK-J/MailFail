@@ -1599,11 +1599,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (foundDomains[0].includes("\\000.")){
                         const Black_Lies = `<${ANCHOR} href="https://blog.cloudflare.com/black-lies">${INFO_IMG} ${BLUE}NSEC is Configured to use "Black-Lies" to Obscure Records.</a>${END}`;
                         addItemToDNSRecordList(`${Black_Lies}`, DNSRecordList);
-                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>vim ${domainName}.zone${COMMAND_END}`;
                         addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     } else { // If no Black Lies increase badge
                         incrementBadgeForCurrentTab();
-                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone${COMMAND_END}`;
+                        const NSEC_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${RED}NSEC is Enabled by the DNSSEC Configuration. Use the Following Commands to NSEC Walk the Domain's Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>vim ${domainName}.zone${COMMAND_END}`;
                         addItemToDNSRecordList(`${NSEC_Warning}`, DNSRecordList);
                     }
 
@@ -1687,7 +1687,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (NSEC3Hashes.length > 0){
             addItemToDNSRecordList(`This Domain uses ${BLUE}${HashingRounds}${END} Rounds of ${BLUE}${HashingAlgorithm}${END} Salted with ${BLUE}"${HashingSalt}"${END} to Hash Subdomain Names in NSEC3 Records. A Subset of the NSEC3 Hashes are Shown Below. To Get a Complete List of Hashes Run the Commands Below.${COMMAND}${NSEC3Hashes.join("</br>")}${COMMAND_END}`, DNSRecordList);
-            const NSEC3_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC3 is Enabled by the DNSSEC Configuration. This Allows Offline Cracking of the Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName}</br>cat ${domainName}.zone</br>n3map-hashcatify ${domainName}.zone ${domainName}.hashcat</br>hashcat -m 8300 ${domainName}.hashcat /path/to/wordlist${COMMAND_END}`;
+            const NSEC3_Warning = `<${ANCHOR} href="https://github.com/anonion0/nsec3map">${INFO_IMG} ${BLUE}NSEC3 is Enabled by the DNSSEC Configuration. This Allows Offline Cracking of the Zone File.</a>${END}${COMMAND}sudo apt-get install pipx python3 python3-pip python3-dev gcc libssl3 libssl-dev</br>pipx install n3map[predict]</br>n3map -v -A --output ${domainName}.zone ${domainName} --predict</br>vim ${domainName}.zone</br>n3map-hashcatify ${domainName}.zone ${domainName}.hashcat</br>hashcat -m 8300 ${domainName}.hashcat /path/to/wordlist${COMMAND_END}`;
             addItemToDNSRecordList(`${NSEC3_Warning}`, DNSRecordList);
             PopUpDiv.appendChild(DNSRecordList);
             container.appendChild(PopUpDiv);
