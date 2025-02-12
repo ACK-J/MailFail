@@ -30,6 +30,7 @@
 // SPF record size too big https://datatracker.ietf.org/doc/html/rfc7208#section-3.4 
 // Can you crack a small DNSSEC key?
 // add DKIM and ARC switches
+// DKIM reusue. If you are CC'd on an email extract the DKIM signature header and reuse it to spoof DKIM to someone
 // Add a search bar
 // Look into SPF bypass with PTR records bsidesnova.org
 // Add a warning if ruf nor rua is found. The domain owner will not be alerted of spoofed emails
@@ -40,13 +41,13 @@
 // Can you use Cracked DKIM key for ARC?
 // CORS PROXY:
 // look into adding https://www.whatsmydns.net/api/domain?q=test.ai for registration check CORS Proxy
-// https://registry.prove.email/api-explorer  CORS proxy
 // SPF flatten dmarcian CORS proxy
 // BIMI cert CORS proxy
 // MTA-STS CORS Proxy
 
 
 // Presentation
+// https://archive.zk.email/api-explorer  CORS proxy https://archive.zk.email/?domain=rrd.com
 // SPF doesnt work (MAIL FROM:) https://datatracker.ietf.org/doc/html/rfc7208#section-11.2
 // DKIM doesnt work https://datatracker.ietf.org/doc/html/rfc6376#section-1.5
 //     DKIM DOESNT SIGN THE BODY OF THE EMAIL JUST HEADERS
@@ -1817,6 +1818,27 @@ document.addEventListener('DOMContentLoaded', function () {
             DKIMSelectors.push(`selector2-${rootDomain.split('.')[0]}-com`);
             DKIMSelectors.push(`selector1-${rootDomain.split('.')[0]}-onmicrosoft-com`);
             DKIMSelectors.push(`selector2-${rootDomain.split('.')[0]}-onmicrosoft-com`);
+
+            // Retrieve publicly known DKIM keys for the domain
+            await fetch(`https://archive.prove.email/api/key?domain=${rootDomain}`, {
+                method: 'GET',
+                headers: {
+                  'accept': 'application/json'
+                }
+              }).then(response => {
+                if (!response.ok) {
+                  throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+              }).then(data => {
+                for (let i = 0; i < data.length; i++) {
+                  DKIMSelectors.push(data[i].selector);
+                }
+              })
+              .catch(error => console.error('Fetch error:', error));
+
+            // Sort and remove duplicate selectors
+            DKIMSelectors = [...new Set(DKIMSelectors)].sort();
 
             // Update UI Links
             document.getElementById("hunterlink").href = `https://hunter.io/try/search/${rootDomain}?locale=en`;
