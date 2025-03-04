@@ -61,7 +61,7 @@
 // demo on two ways to send email via powershell
 // you can enumerate all DKIM selectors if using NSEC RRs
 // MUA -> MTA ----> SMTP over Internet -----> MTA -> MDA
-// mail user agent, mail transfer agent (Recieved: headers), mail delivery agent
+// mail user agent, mail transfer agent (Received: headers), mail delivery agent
 // Below Return Path: header you can't trust anything
 // The zone signing key (ZSK) - is used to sign and validate the individual record sets within the zone.
 // The key signing key (KSK) - is used to sign the DNSKEY records in the zone.
@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 }
                                 if (eachRecord.includes("ptr")){
                                     incrementBadgeForCurrentTab();
-                                    const rfc7208_5_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-5.5">${INFO_IMG} ${RED}The PTR Mechanism is Marked as "DO NOT USE" in the RFC. A Malicious PTR Record Can Bypass SPF if FCrDNS is not Checked.${END}</a>`;
+                                    const rfc7208_5_5 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc7208#section-5.5">${INFO_IMG} ${RED}The PTR Mechanism is Marked as "DO NOT USE" in the RFC. A Malicious PTR Record Can Bypass SPF if FCrDNS is not Checked by the Receiving MTA.${END}</a>`;
                                     addItemToDNSRecordList(`${rfc7208_5_5}`, DNSRecordList);
                                 }      
                                 if (eachRecord.includes("include:relay.mailchannels.net")){
@@ -1276,8 +1276,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const PopUpDiv = document.createElement('div');
         const DNSRecordList = document.createElement('ul');
         let num_DKIM = 0;
-        let redArray = ["t=y", "h=sha1"];
-        let blueArray = ["n=", "s=email", "s=*", "s=", "g=*", "g="];
+        let redArray = ["h=sha1"];
+        let blueArray = ["t=y", "n=", "s=email", "s=*", "s=", "g=*", "g="];
         let greenArray = ["h=sha256", "k=rsa", "t=s"];
         createHeader(PopUpDiv, domainName, "DKIM", `https://dmarcian.com/dkim-inspector/?domain=${domainName}`);
         const DKIMRecordPromises = DKIMSelectors.map(async (selector) => {
@@ -1296,6 +1296,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (rsaKeySize <= 512){
                         const Cado_NFS_Tut = `<${ANCHOR} href="https://yurichev.com/news/20220210_RSA/">${INFO_IMG} ${RED}Cryptographically Insecure Selector "${selector}" Detected. The DKIM Private Key Can be Recovered in About 2 Days for Roughly $30 of Cloud Compute.${END}</a></br>${COMMAND}${Cado_CMD}${COMMAND_END}`;
                         addItemToDNSRecordList(`${Cado_NFS_Tut}`, DNSRecordList);
+                    }else if (rsaKeySize === 768){
+                        const Cado_NFS_Tut = `<${ANCHOR} href="https://yurichev.com/news/20220210_RSA/">${INFO_IMG} ${RED}Cryptographically Insecure Selector "${selector}" Detected. The DKIM Private Key (768 bits) Can Theoretically be Recovered in about 17 Years Using Digital Oceans Biggest VM. While this Sounds Impractical for Consumers, a Server Farm Could Shrink this Estimate Drastically as such this Key Size is no Longer Secure and Should be Removed.${END}</a>${COMMAND}${Cado_CMD}${COMMAND_END}`;
+                        addItemToDNSRecordList(`${Cado_NFS_Tut}`, DNSRecordList);
                     }else{
                         const Cado_NFS_Tut = `<${ANCHOR} href="https://yurichev.com/news/20220210_RSA/">${INFO_IMG} ${RED}Cryptographically Insecure Selector "${selector}" Detected. The DKIM Private Key Can be Recovered.${END}</a>${COMMAND}${Cado_CMD}${COMMAND_END}`;
                         addItemToDNSRecordList(`${Cado_NFS_Tut}`, DNSRecordList);
@@ -1307,7 +1310,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     addItemToDNSRecordList(`<span class="centered">${RED}${selector}._domainkey.${domainName}${END}</span>${COMMAND}${returnhighlightSubstrings(redArray, blueArray, greenArray, dkimRecord)}${COMMAND_END}</br>RSA-Key Size: ${RED}Invalid Public Key!${END}</br>Selector: ${RED}${selector}${END}`, DNSRecordList);
                 }
                 if (dkimRecord.includes("t=y")){
-                    const rfc6376_p28 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc6376#page-28">${INFO_IMG} ${RED}An Email Signed by a DKIM Record With "t=y" (Testing Mode) is Accepted Even if the Signature Fails to Verify.${END}</a>`;
+                    const rfc6376_p28 = `<${ANCHOR} href="https://datatracker.ietf.org/doc/html/rfc6376#page-28">${INFO_IMG} ${BLUE}An Email Signed by a DKIM Record With "t=y" (Testing Mode) is Treated as Unsigned Regardless if the Signature is Valid or Not.${END}</a>`;
                     addItemToDNSRecordList(`${rfc6376_p28}`, DNSRecordList);
                     incrementBadgeForCurrentTab();
                 }
