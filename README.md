@@ -8,6 +8,12 @@ MailFail identifies and provides commands to exploit a large number of email-rel
 
 Try out the extension on the website https://www.blackhillsinfosec.com/mailfail/
 
+# Talks
+Part 1 of this research was presented during a BHIS webcast and Part 2 as a Wild West Hackin' Fest 2024 talk.
+
+[![Webcast](https://img.youtube.com/vi/UbdMAmsWus8/0.jpg)](https://www.youtube.com/watch?v=UbdMAmsWus8)
+[![WWHF](https://img.youtube.com/vi/o1b8D_5gdOo/0.jpg)](https://www.youtube.com/watch?v=o1b8D_5gdOo)
+
 # Popup
 <p align="center">
   <img src="https://github.com/ACK-J/MailFail/assets/60232273/e50189f7-16bc-4664-824e-3e9ac0c5ac34" alt="GUI">
