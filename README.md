@@ -6,7 +6,7 @@
 
 MailFail identifies and provides commands to exploit a large number of email-related misconfigurations for the current domain and subdomain within a web browser. The extension's UI popup highlights any misconfigurations in red and links to the supporting documentation.
 
-Try out the extension on the website https://m.ail.fail
+Try out the extension on the website https://www.blackhillsinfosec.com/mailfail/
 
 # Popup
 <p align="center">
