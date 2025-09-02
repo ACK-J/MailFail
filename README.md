@@ -9,7 +9,7 @@ MailFail identifies and provides commands to exploit a large number of email-rel
 Try out the extension on the website https://www.blackhillsinfosec.com/mailfail/
 
 # Talks
-Part 1 of this research was presented during a BHIS webcast and Part 2 as a Wild West Hackin' Fest 2024 talk.
+Part 1 of this research was presented during a BHIS webcast and Part 2 as a Wild West Hackin' Fest 2024 talk. Both Youtube links are provided below.
 
 [![Webcast](https://img.youtube.com/vi/UbdMAmsWus8/0.jpg)](https://www.youtube.com/watch?v=UbdMAmsWus8)
 [![WWHF](https://img.youtube.com/vi/o1b8D_5gdOo/0.jpg)](https://www.youtube.com/watch?v=o1b8D_5gdOo)
